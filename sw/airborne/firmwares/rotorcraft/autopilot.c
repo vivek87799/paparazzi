@@ -547,8 +547,11 @@ void autopilot_on_rc_frame(void)
     uint8_t new_autopilot_mode = 0;
     AP_MODE_OF_PPRZ(radio_control.values[RADIO_MODE], new_autopilot_mode);
 
+#if USE_GPS
     /* don't enter NAV mode if GPS is lost (this also prevents mode oscillations) */
-    if (!(new_autopilot_mode == AP_MODE_NAV && GpsIsLost())) {
+    if (!(new_autopilot_mode == AP_MODE_NAV && GpsIsLost()))
+#endif // USE_GPS
+    {
       /* always allow to switch to manual */
       if (new_autopilot_mode == MODE_MANUAL) {
         autopilot_set_mode(new_autopilot_mode);

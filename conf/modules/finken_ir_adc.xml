@@ -1,0 +1,27 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="finken_ir_adc">
+    <doc>
+        <description>
+            ADC Infrared Sensor Driver for FINken
+        </description>
+        <configure name="ADC_IR" value="ADCX" description="choose which ADC is used for ir sensor"/>
+    </doc>
+
+    <header>
+        <file name="finken_ir_adc.h"/>
+    </header>
+
+    <init fun="finken_ir_adc_init()"/>
+    <periodic fun="finken_ir_adc_periodic()" freq="30"/>
+
+    <makefile>
+        <file name="finken_ir_adc.c"/>
+    </makefile>
+    <makefile target="ap">
+        <define name="ADC_CHANNEL_IR" value="$(ADC_IR)"/>
+        <define name="USE_$(ADC_IR)"/>
+        <define name="USE_IR"/>
+    </makefile>
+
+</module>

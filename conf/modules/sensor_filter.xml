@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="sensor_filter">
+  <doc>
+    <description>Module to filter and process sensor data.</description>
+  </doc>
+  <header>
+    <file name="sensor_filter.h"/>
+  </header>
+  <init fun="sensor_filter_init()" />
+  <periodic fun="sensor_filter_periodic()" freq="60" />
+  <makefile>
+    <file name="sensor_filter.c"/>
+  </makefile>
+</module>
+
