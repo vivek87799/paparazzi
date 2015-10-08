@@ -1,0 +1,101 @@
+<conf>
+  <aircraft
+   name="FINken3_01"
+   ac_id="5"
+   airframe="airframes/ovgu/fink3.xml"
+   radio="radios/spektrum.xml"
+   telemetry="telemetry/ovgu/free_flight.xml"
+   flight_plan="flight_plans/ovgu/free_flight.xml"
+   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
+   settings_modules=""
+   gui_color="blue"
+  />
+  <aircraft
+   name="Quad_Lia_ovgu_01"
+   ac_id="1"
+   airframe="airframes/ovgu/free_flight_flow.xml"
+   radio="radios/spektrum.xml"
+   telemetry="telemetry/ovgu/free_flight.xml"
+   flight_plan="flight_plans/ovgu/free_flight.xml"
+   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
+   settings_modules=""
+   gui_color="white"
+  />
+  <aircraft
+   name="Quad_Lia_ovgu_02"
+   ac_id="2"
+   airframe="airframes/ovgu/free_flight_flow.xml"
+   radio="radios/spektrum.xml"
+   telemetry="telemetry/ovgu/free_flight.xml"
+   flight_plan="flight_plans/ovgu/free_flight.xml"
+   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
+   settings_modules=""
+   gui_color="#b34c14805f44"
+  />
+  <aircraft
+   name="Quad_Lia_ovgu_03"
+   ac_id="3"
+   airframe="airframes/ovgu/free_flight.xml"
+   radio="radios/spektrum.xml"
+   telemetry="telemetry/ovgu/free_flight.xml"
+   flight_plan="flight_plans/ovgu/free_flight.xml"
+   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
+   settings_modules=""
+   gui_color="#0000ffff006f"
+  />
+  <aircraft
+   name="Quad_Lia_ovgu_04"
+   ac_id="4"
+   airframe="airframes/ovgu/free_flight.xml"
+   radio="radios/spektrum.xml"
+   telemetry="telemetry/ovgu/free_flight.xml"
+   flight_plan="flight_plans/ovgu/free_flight.xml"
+   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
+   settings_modules=""
+   gui_color="#000016a9ffff"
+  />
+  <aircraft
+   name="Quad_Lia_ovgu_teststand_01"
+   ac_id="201"
+   airframe="airframes/ovgu/teststand.xml"
+   radio="radios/spektrum.xml"
+   telemetry="telemetry/ovgu/teststand.xml"
+   flight_plan="flight_plans/ovgu/teststand.xml"
+   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
+   settings_modules=""
+   gui_color="white"
+  />
+  <aircraft
+   name="Quad_Lia_ovgu_teststand_02"
+   ac_id="202"
+   airframe="airframes/ovgu/teststand.xml"
+   radio="radios/spektrum.xml"
+   telemetry="telemetry/ovgu/teststand.xml"
+   flight_plan="flight_plans/ovgu/teststand.xml"
+   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
+   settings_modules=""
+   gui_color="#b34c14805f44"
+  />
+  <aircraft
+   name="Quad_Lia_ovgu_teststand_03"
+   ac_id="203"
+   airframe="airframes/ovgu/teststand.xml"
+   radio="radios/spektrum.xml"
+   telemetry="telemetry/ovgu/teststand.xml"
+   flight_plan="flight_plans/ovgu/teststand.xml"
+   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
+   settings_modules=""
+   gui_color="#07d4e22f1d56"
+  />
+  <aircraft
+   name="Quad_Lia_ovgu_teststand_04"
+   ac_id="204"
+   airframe="airframes/ovgu/teststand.xml"
+   radio="radios/spektrum.xml"
+   telemetry="telemetry/ovgu/teststand.xml"
+   flight_plan="flight_plans/ovgu/teststand.xml"
+   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
+   settings_modules=""
+   gui_color="#082f061bf3eb"
+  />
+</conf>
