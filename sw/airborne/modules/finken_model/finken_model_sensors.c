@@ -38,6 +38,7 @@
 #endif
 
 struct sensor_model_s finken_sensor_model;
+struct Int32Eulers finken_sensor_attitude;
 int64_t temp_mult;
 uint32_t last_ts;
 
@@ -82,6 +83,7 @@ void finken_sensor_model_periodic(void)
 	}
 
 	memcpy(&finken_sensor_model.attitude, stateGetNedToBodyQuat_i(), sizeof(struct Int32Quat));
+	int32_eulers_of_quat(&finken_sensor_attitude, &finken_sensor_model.attitude);
 	/* x = -y and y = x because of the coord. transformation from sensor to body coord. system */	
 #ifdef USE_FLOW
 	finken_sensor_model.velocity.x       = SPEED_BFP_OF_REAL(-optical_flow.flow_comp_m_y);
@@ -117,15 +119,13 @@ void send_finken_hc_debug(struct transport_tx *trans, struct link_device* link) 
 void send_finken_sensor_model_telemetry(struct transport_tx *trans, struct link_device* link) {
   trans=trans;
   link=link;
-	struct Int32Eulers attitude;
-	int32_eulers_of_quat(&attitude, &finken_sensor_model.attitude);
 
 	float pos_x      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.x);
 	float pos_y      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.y);
 	float pos_z      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
-	float pos_pitch  = ANGLE_FLOAT_OF_BFP(attitude.theta);
-	float pos_roll   = ANGLE_FLOAT_OF_BFP(attitude.phi);
-	float pos_yaw    = ANGLE_FLOAT_OF_BFP(attitude.psi);
+	float pos_pitch  = ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.theta);
+	float pos_roll   = ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.phi);
+	float pos_yaw    = ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.psi);
 	float velocity_x = SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x);
 	float velocity_y = SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y);
 	float velocity_z = SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.z);

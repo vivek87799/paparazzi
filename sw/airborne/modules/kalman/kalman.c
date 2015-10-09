@@ -127,6 +127,32 @@ void update_u(void) {
 // update observation vector
 void update_z(void) {
 	mf16 *z = kalman_get_observation_vector(&k_pva_m);
+	fix16_t helper_const;
+
+	fix16_t alpha = finken_sensor_attitude.phi * (1<<(16-INT32_ANGLE_FRAC));
+	fix16_t beta = finken_sensor_attitude.theta * (1<<(16-INT32_ANGLE_FRAC));
+	fix16_t theta = finken_sensor_attitude.psi * (1<<(16-INT32_ANGLE_FRAC));
+
+	fix16_t alpha_sin = fix16_sin(alpha);
+	fix16_t alpha_cos = fix16_cos(alpha);
+
+	fix16_t beta_sin = fix16_sin(beta);
+	fix16_t beta_cos = fix16_cos(beta);
+
+	fix16_t theta_sin = fix16_sin(theta);
+	fix16_t theta_cos = fix16_cos(theta);
+
+	fix16_t R11 = fix16_add(theta_cos, beta_cos);
+	fix16_t R12 = fix16_sub(fix16_mul(fix16_mul(theta_cos, beta_sin), alpha_sin), fix16_mul(theta_sin, alpha_cos));
+	fix16_t R13 = fix16_add(fix16_mul(fix16_mul(theta_cos, beta_sin), alpha_cos), fix16_mul(theta_sin, alpha_sin));
+
+	fix16_t R21 = fix16_add(theta_sin, beta_cos);
+	fix16_t R22 = fix16_add(fix16_mul(fix16_mul(theta_sin, beta_sin), alpha_sin), fix16_mul(theta_cos, alpha_cos));
+	fix16_t R23 = fix16_sub(fix16_mul(fix16_mul(theta_sin, beta_sin), alpha_cos), fix16_mul(theta_cos, alpha_sin));
+
+	fix16_t R31 = fix16_mul(beta_sin, fix16_from_float(-1.0));
+	fix16_t R32 = fix16_mul(beta_cos, alpha_sin);
+	fix16_t R33 = fix16_mul(beta_cos, alpha_cos);
 
 	uint32_t now = get_sys_time_msec();
 	fix16_t diff = fix16_div(fix16_from_float((float)(now - last_time)), fix16_from_float(1000.0));
@@ -135,15 +161,28 @@ void update_z(void) {
 	fix16_t velocity_y = finken_sensor_model.velocity.y / (1<<(INT32_SPEED_FRAC-16));
 	fix16_t position_z = finken_sensor_model.pos.z * (1<<(16-INT32_POS_FRAC));
 
-	z->data[0][0] += fix16_mul(fix16_div(fix16_add(velocity_x, z->data[2][0]), fix16_from_float(2.0)), diff);	// pos_x
-    z->data[1][0] += fix16_mul(fix16_div(fix16_add(velocity_y, z->data[3][0]), fix16_from_float(2.0)), diff);	// pos_y
-	z->data[5][0] = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);	// vel_z
-    z->data[2][0] = position_z;	// pos_z
+	position_z = fix16_mul(R33, position_z);
+	helper_const = velocity_x;
+	velocity_x = fix16_add(fix16_mul(R11, velocity_x), fix16_mul(R12, velocity_y));
+	velocity_y = fix16_add(fix16_mul(R21, helper_const), fix16_mul(R22, velocity_y));
+
+	fix16_t velocity_z = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);
+	fix16_t position_x = fix16_mul(fix16_div(fix16_add(velocity_x, z->data[2][0]), fix16_from_float(2.0)), diff);
+	fix16_t position_y = fix16_mul(fix16_div(fix16_add(velocity_y, z->data[3][0]), fix16_from_float(2.0)), diff);
+
+	fix16_t acceleration_x = finken_sensor_model.acceleration.x * (1<<(16-INT32_ACCEL_FRAC));
+	fix16_t acceleration_y = finken_sensor_model.acceleration.y * (1<<(16-INT32_ACCEL_FRAC));
+	fix16_t acceleration_z = finken_sensor_model.acceleration.z * (1<<(16-INT32_ACCEL_FRAC));
+
+	z->data[0][0] += position_x;	// pos_x
+    z->data[1][0] += position_y;	// pos_y
+	z->data[2][0] = position_z;	// pos_z
 	z->data[3][0] = velocity_x;	// vel_x
     z->data[4][0] = velocity_y;	// vel_y
-	z->data[6][0] = finken_sensor_model.acceleration.x * (1<<(16-INT32_ACCEL_FRAC));	// acc_x
-    z->data[7][0] = finken_sensor_model.acceleration.y * (1<<(16-INT32_ACCEL_FRAC));	// acc_y
-    z->data[8][0] = finken_sensor_model.acceleration.z * (1<<(16-INT32_ACCEL_FRAC));	// acc_z
+	z->data[5][0] = velocity_z;	// vel_z
+	z->data[6][0] = fix16_add(fix16_add(fix16_mul(R11, acceleration_x), fix16_mul(R12, acceleration_y)), fix16_mul(R13, acceleration_z));	// acc_x
+    z->data[7][0] = fix16_add(fix16_add(fix16_mul(R21, acceleration_x), fix16_mul(R22, acceleration_y)), fix16_mul(R23, acceleration_z));	// acc_y
+    z->data[8][0] = fix16_add(fix16_add(fix16_mul(R31, acceleration_x), fix16_mul(R32, acceleration_y)), fix16_mul(R33, acceleration_z));	// acc_z
 
 	last_time = now;
 }
@@ -155,7 +194,7 @@ void kalman_init(void) {
 	const fix16_t dt_2 = fix16_sq(dt);
 	const fix16_t dt_3 = fix16_mul(dt, dt_2);
 	const fix16_t dt_4 = fix16_sq(dt_2);
-	m = fix16_from_float(290);				// SET MASS!!! [g]
+	m = fix16_from_float(304);				// SET MASS!!! [g]
 	const fix16_t init_uncert = fix16_from_float(1.0);		// SET INITIAL UNCERTEANTY!!!
 	const fix16_t sigma = fix16_from_float(1.0);			// SET SIGMA!!!
 	fix16_t helper_const;									// varible to speed up matrix assignment

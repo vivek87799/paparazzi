@@ -46,6 +46,7 @@ struct sensor_model_s {
 };
 
 extern struct sensor_model_s finken_sensor_model;
+extern struct Int32Eulers finken_sensor_attitude;
 
 extern void finken_sensor_model_init(void);
 extern void finken_sensor_model_periodic(void);
