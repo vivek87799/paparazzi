@@ -1,0 +1,23 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="kalman">
+  <doc>
+    <description>Kalman-filter for position, velocity, acceleration estimation in x, y, z directions</description>
+  </doc>
+  <header>
+    <file name="kalman.h"/>
+  </header>
+  <init fun="kalman_init()"/>
+  <periodic fun="predict()" freq="10" />
+  <periodic fun="correct()" freq="10" />
+  <makefile>
+    <file name="kalman.c"/>
+	<file name="/libfixkalman/fixkalman.c"/>
+	<file name="/libfixmatrix/fixmatrix.c"/>
+	<file name="/libfixmatrix/fixarray.c"/>
+	<file name="/libfixmath/fix16.c"/>
+	<file name="/libfixmath/fix16_sqrt.c"/>
+	<file name="/libfixmath/fix16_trig.c"/>
+  </makefile>
+</module>
+

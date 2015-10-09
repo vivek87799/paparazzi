@@ -190,10 +190,6 @@ void sonar_array_i2c_periodic(void) {
 #endif // SITL
 }
 
-void sonar_array_i2c_event(void) {
-	// i guess it it not possible to query verything so often
-}
-
 void send_sonar_array_telemetry(struct transport_tx *trans, struct link_device *link)
 {
 	trans=trans;
