@@ -223,7 +223,7 @@ void update_z(void) {
 
 	// update measurement vector vector
 	z->data[0][0] = last_pos.x;	  // pos_x
-  z->data[1][0] = last.pos.y ;	// pos_y
+  z->data[1][0] = last_pos.y ;	// pos_y
 	z->data[2][0] = position_z;		// pos_z
 	z->data[3][0] = velocity_x;		// vel_x
   z->data[4][0] = velocity_y;		// vel_y
