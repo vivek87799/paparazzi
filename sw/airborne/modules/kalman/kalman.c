@@ -15,6 +15,8 @@
 int32_t dt_last_measure;
 struct state_vector_kalman kalman_sv_pva;
 
+#define G	9.81
+
 // activate LUT for trigonometric functions
 #define FIXMATH_SIN_LUT
 
@@ -63,6 +65,8 @@ void kalman_sv_init(void) {
 	register_periodic_telemetry(DefaultPeriodic, "KALMAN", send_kalman_telemetry);
 }
 
+//0,01514x2+0,65268x
+
 // update input vector
 void update_u(void) {
 	mf16 *u = kalman_get_input_vector(&k_pva);
@@ -82,12 +86,17 @@ void update_u(void) {
 
 	fix16_t thrust = fix16_from_float(finken_actuators_model.thrust);
 
+	// Conversionsfunction from Christoph: thrust[g] = 0,01514x^2+0,65268x [% --> gramm]
+	fix16_t thrust_converted = fix16_add(fix16_mul(fix16_from_float(0.01514), fix16_mul(thrust, thrust)),
+		fix16_mul(fix16_from_float(0.65268), thrust));
+	thrust_converted = fix16_mul(thrust_converted, fix16_from_float(G));
+
 	// update input vector
 	u->data[0][0] = fix16_mul(fix16_add(fix16_mul(theta_cos, fix16_mul(beta_sin, alpha_cos)), 
-		fix16_mul(theta_cos, alpha_sin)), thrust);	// Thrust in X-Direction
+		fix16_mul(theta_cos, alpha_sin)), thrust_converted);	// Thrust in X-Direction
     u->data[1][0] = fix16_mul(fix16_sub(fix16_mul(theta_sin, fix16_mul(beta_sin, alpha_cos)), 
-		fix16_mul(theta_cos, alpha_sin)), thrust);	// Thrust in Y-Direction
-    u->data[2][0] = fix16_mul(fix16_mul(beta_cos, alpha_cos), thrust);	// Thrust in Z-Direction
+		fix16_mul(theta_cos, alpha_sin)), thrust_converted);	// Thrust in Y-Direction
+    u->data[2][0] = fix16_mul(fix16_mul(beta_cos, alpha_cos), thrust_converted);	// Thrust in Z-Direction
 }
 
 // update observation vector
@@ -96,15 +105,15 @@ void update_z(void) {
 
 	// ToDo
 
-	z->data[0][0] = 0;	// pos_x
-    z->data[1][0] = 0;	// pos_y
-    z->data[2][0] = 0;	// pos_z
-	z->data[3][0] = 0;	// vel_x
-    z->data[4][0] = 0;	// vel_y
-    z->data[5][0] = 0;	// vel_z
-	z->data[6][0] = 0;	// acc_x
-    z->data[7][0] = 0;	// acc_y
-    z->data[8][0] = 0;	// acc_z
+	//z->data[0][0] = 0;	// pos_x
+    //z->data[1][0] = 0;	// pos_y
+    //z->data[2][0] = 0;	// pos_z
+	//z->data[3][0] = 0;	// vel_x
+    //z->data[4][0] = 0;	// vel_y
+    //z->data[5][0] = 0;	// vel_z
+	//z->data[6][0] = 0;	// acc_x
+    //z->data[7][0] = 0;	// acc_y
+    //z->data[8][0] = 0;	// acc_z
 }
 
 // initialize kalman filter
@@ -117,7 +126,7 @@ void kalman_init(void) {
 	const fix16_t m = fix16_from_float(0.29);				// SET MASS!!!
 	const fix16_t init_uncert = fix16_from_float(1.0);		// SET INITIAL UNCERTEANTY!!!
 	const fix16_t sigma = fix16_from_float(1.0);			// SET SIGMA!!!
-	fix16_t helper_const;							// varible to speed up matrix assignment
+	fix16_t helper_const;									// varible to speed up matrix assignment
 
 	// init output struct
 	kalman_sv_init();
@@ -693,8 +702,8 @@ extern void predict(void) {
 
 // correction step
 extern void correct(void) {
-	update_z();
-	kalman_correct(&k_pva, &k_pva_m);
+	//update_z();
+	//kalman_correct(&k_pva, &k_pva_m);
 	update_output();
 }
 
