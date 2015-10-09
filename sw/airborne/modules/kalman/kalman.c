@@ -17,8 +17,6 @@
 // last measurement time to compute time difference
 uint32_t last_time;
 
-float o1, o2, o3;
-
 // last measured vertical positions
 struct last_measurement_vertical_positions last_pos;
 
@@ -98,7 +96,8 @@ void update_u(void) {
 	// controll data from autopilot
 	float alpha = finken_actuators_model.alpha;
 	float beta = finken_actuators_model.beta;
-	float theta = finken_actuators_model.theta; // grad/s winkelgeschwindigkeit
+	// float theta = finken_actuators_model.theta; // grad/s winkelgeschwindigkeit
+	float theta = 0.0;
 	float throttle = finken_actuators_model.thrust;
 	*/
 
@@ -107,12 +106,16 @@ void update_u(void) {
 	float beta = ((float) radio_control.values[RADIO_PITCH]) / (12236*180) * 45 * PI;
 	//float theta = ((float) radio_control.values[RADIO_YAW]) / (12236*180) * 90 * PI;
 	float theta = 0.0;
+
 	// correction to 0 with 1318
 	float throttle = (((float)radio_control.values[RADIO_THROTTLE]) + 1318.0) / 12236.0 * 100;
 
-	// delete negative values
-	if(throttle<0.0) {
-		throttle = 0.0;
+	// handle controller spezified dead zones
+	if (alpha<1.0 && alpha>-1.0) {
+		alpha = 0.0;
+	}
+	if (beta<1.0 && beta>-1.0) {
+		beta = 0.0;
 	}
 
 	// trigonometric variables to reduce future computations
@@ -172,12 +175,16 @@ void update_z(void) {
 
 	// Rotationsmatrix
 	fix16_t R11 = fix16_add(theta_cos, beta_cos);
-	fix16_t R12 = fix16_sub(fix16_mul(fix16_mul(theta_cos, beta_sin), alpha_sin), fix16_mul(theta_sin, alpha_cos));
-	fix16_t R13 = fix16_add(fix16_mul(fix16_mul(theta_cos, beta_sin), alpha_cos), fix16_mul(theta_sin, alpha_sin));
+	fix16_t R12 = fix16_sub(fix16_mul(fix16_mul(theta_cos, beta_sin), alpha_sin), 
+		fix16_mul(theta_sin, alpha_cos));
+	fix16_t R13 = fix16_add(fix16_mul(fix16_mul(theta_cos, beta_sin), alpha_cos), 
+		fix16_mul(theta_sin, alpha_sin));
 
 	fix16_t R21 = fix16_add(theta_sin, beta_cos);
-	fix16_t R22 = fix16_add(fix16_mul(fix16_mul(theta_sin, beta_sin), alpha_sin), fix16_mul(theta_cos, alpha_cos));
-	fix16_t R23 = fix16_sub(fix16_mul(fix16_mul(theta_sin, beta_sin), alpha_cos), fix16_mul(theta_cos, alpha_sin));
+	fix16_t R22 = fix16_add(fix16_mul(fix16_mul(theta_sin, beta_sin), alpha_sin), 
+		fix16_mul(theta_cos, alpha_cos));
+	fix16_t R23 = fix16_sub(fix16_mul(fix16_mul(theta_sin, beta_sin), alpha_cos), 
+		fix16_mul(theta_cos, alpha_sin));
 
 	fix16_t R31 = fix16_mul(beta_sin, fix16_from_float(-1.0));
 	fix16_t R32 = fix16_mul(beta_cos, alpha_sin);
@@ -201,8 +208,10 @@ void update_z(void) {
 	// indirect computation of position difference to last time in x and y 
 	// and velocity in z direction
 	fix16_t velocity_z = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);
-	fix16_t position_x = fix16_mul(fix16_div(fix16_add(velocity_x, z->data[3][0]), fix16_from_float(2.0)), diff);
-	fix16_t position_y = fix16_mul(fix16_div(fix16_add(velocity_y, z->data[4][0]), fix16_from_float(2.0)), diff);
+	fix16_t position_x = fix16_mul(fix16_div(fix16_add(velocity_x, z->data[3][0]), 
+		fix16_from_float(2.0)), diff);
+	fix16_t position_y = fix16_mul(fix16_div(fix16_add(velocity_y, z->data[4][0]), 
+		fix16_from_float(2.0)), diff);
 
 	// get accelerometer data
 	fix16_t acceleration_x = finken_sensor_model.acceleration.x * (1<<(16-INT32_ACCEL_FRAC));
@@ -219,9 +228,12 @@ void update_z(void) {
 	z->data[3][0] = velocity_x;		// vel_x
   z->data[4][0] = velocity_y;		// vel_y
 	z->data[5][0] = velocity_z;		// vel_z
-	z->data[6][0] = fix16_add(fix16_add(fix16_mul(R11, acceleration_x), fix16_mul(R12, acceleration_y)), fix16_mul(R13, acceleration_z));	// acc_x
-  z->data[7][0] = fix16_add(fix16_add(fix16_mul(R21, acceleration_x), fix16_mul(R22, acceleration_y)), fix16_mul(R23, acceleration_z));	// acc_y
-  z->data[8][0] = fix16_add(fix16_add(fix16_mul(R31, acceleration_x), fix16_mul(R32, acceleration_y)), fix16_mul(R33, acceleration_z));	// acc_z
+	z->data[6][0] = fix16_add(fix16_add(fix16_mul(R11, acceleration_x),
+		fix16_mul(R12, acceleration_y)), fix16_mul(R13, acceleration_z));	// acc_x
+  z->data[7][0] = fix16_add(fix16_add(fix16_mul(R21, acceleration_x), 
+		fix16_mul(R22, acceleration_y)), fix16_mul(R23, acceleration_z));	// acc_y
+  z->data[8][0] = fix16_add(fix16_add(fix16_mul(R31, acceleration_x), 
+		fix16_mul(R32, acceleration_y)), fix16_mul(R33, acceleration_z));	// acc_z
 
 	// update timestamp
 	last_time = now;
@@ -288,6 +300,7 @@ void kalman_init(void) {
 	// air density = 1.225 kg/m^3
 	//helper_const = fix16_mul(fix16_div(fix16_from_float(1225.0), m), fix16_mul(c, A1));
 
+	// air resistance
 	matrix_set(A, 6, 3, -fix16_from_float(1.614));
 
 	matrix_set(A, 7, 4, -fix16_from_float(1.614));
@@ -370,6 +383,7 @@ void kalman_init(void) {
 	// init timestamp
 	last_time = get_sys_time_msec();
 
+	// init u, z vectors and output structure
 	update_u();
 	update_z();
 	update_output();
@@ -378,12 +392,16 @@ void kalman_init(void) {
 extern void update_output(void) {
 	// get state vector from struct
 	mf16 *x = kalman_get_state_vector(&k_pva);
+
+	// declaration of variables
+	int8_t on_ground = 0;
 	float z, z_v;
+
+	// convert position and velocity in z direction to float
 	z= POS_FLOAT_OF_BFP(((x->data[2][0]) / (1<<(16-INT32_POS_FRAC))));
 	z_v = SPEED_FLOAT_OF_BFP(((x->data[5][0]) * (1<<(INT32_SPEED_FRAC-16))));
-	int8_t on_ground = 0;
 
-	// positions
+	// positions (converted back to paparazzi format)
 	kalman_sv_pva.pos_x = (x->data[0][0]) / (1<<(16-INT32_POS_FRAC));
 	kalman_sv_pva.pos_y = (x->data[1][0]) / (1<<(16-INT32_POS_FRAC));
 
@@ -397,7 +415,7 @@ extern void update_output(void) {
 		kalman_sv_pva.pos_z = (x->data[2][0]) / (1<<(16-INT32_POS_FRAC));
 	}
 
-	// velocity
+	// velocity (converted back to paparazzi format)
 	kalman_sv_pva.vel_x = (x->data[3][0]) * (1<<(INT32_SPEED_FRAC-16));
 	kalman_sv_pva.vel_y = (x->data[4][0]) * (1<<(INT32_SPEED_FRAC-16));
 
@@ -410,7 +428,7 @@ extern void update_output(void) {
 		kalman_sv_pva.vel_z = (x->data[5][0]) * (1<<(INT32_SPEED_FRAC-16));
 	}
 
-	// acceleration
+	// acceleration (converted back to paparazzi format)
 	kalman_sv_pva.acc_x = (x->data[6][0]) / (1<<(16-INT32_ACCEL_FRAC));
 	kalman_sv_pva.acc_y = (x->data[7][0]) / (1<<(16-INT32_ACCEL_FRAC));
 	kalman_sv_pva.acc_z = (x->data[8][0]) / (1<<(16-INT32_ACCEL_FRAC));
@@ -435,6 +453,7 @@ void send_kalman_telemetry(struct transport_tx *trans, struct link_device* link)
 	trans=trans;
 	link=link;
 
+	// conversion to float
 	float pos_x = POS_FLOAT_OF_BFP(kalman_sv_pva.pos_x);
 	float pos_y = POS_FLOAT_OF_BFP(kalman_sv_pva.pos_y);
 	float pos_z = POS_FLOAT_OF_BFP(kalman_sv_pva.pos_z);
