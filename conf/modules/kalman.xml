@@ -8,8 +8,8 @@
     <file name="kalman.h"/>
   </header>
   <init fun="kalman_init()"/>
-  <periodic fun="predict()" freq="10" />
-  <periodic fun="correct()" freq="10" />
+  <periodic fun="predict()" freq="15" />
+  <periodic fun="correct()" freq="15" />
   <makefile>
     <file name="kalman.c"/>
 	<file name="/libfixkalman/fixkalman.c"/>

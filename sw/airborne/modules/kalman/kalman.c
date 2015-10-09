@@ -14,8 +14,10 @@
 #include "modules/finken_model/finken_model_sensors.h"
 #include "subsystems/radio_control.h"
 
-int32_t dt_last_measure;
+// last measurement time to compute time difference
 uint32_t last_time;
+
+// struct to communicate results to other modules
 struct state_vector_kalman kalman_sv_pva;
 
 #define PI  3.14159265359
@@ -43,6 +45,7 @@ kalman16_observation_t k_pva_m;
 #define matrix_set(matrix, row, column, value) \
     matrix->data[row][column] = value
 
+// global variable for mass
 fix16_t m;
 
 // Error if fixmatrix library is not configured correctly (fixmatrix.h FIXMATRIX_MAX_SIZE)
@@ -67,6 +70,7 @@ void kalman_sv_init(void) {
 	kalman_sv_pva.acc_y = 0;
 	kalman_sv_pva.acc_z = 0;
 
+	// telemetry
 	register_periodic_telemetry(DefaultPeriodic, "KALMAN", send_kalman_telemetry);
 }
 
@@ -102,6 +106,7 @@ void update_u(void) {
 		throttle = 0.0;
 	}
 
+	// trigonometric variables to reduce future computations
 	fix16_t alpha_sin = fix16_sin(fix16_from_float(alpha));
 	fix16_t alpha_cos = fix16_cos(fix16_from_float(alpha));
 
@@ -116,9 +121,11 @@ void update_u(void) {
 	// Conversionsfunction from Christoph: thrust[g] = 0.01514x^2 + 0.65268x [% --> gramm] corresponding to 4 motors
 	fix16_t thrust_converted = fix16_mul(fix16_add(fix16_mul(fix16_from_float(0.01514), fix16_mul(thrust, thrust)),
 		fix16_mul(fix16_from_float(0.65268), thrust)), fix16_from_float(4.0));
+
+	// convert to force
 	thrust_converted = fix16_mul(thrust_converted, fix16_from_float(9.81));
 
-	// update input vector
+	// decompore thrust vector to global acceleration vectors and update input vector
 	u->data[0][0] = fix16_mul(fix16_add(fix16_mul(theta_cos, fix16_mul(beta_sin, alpha_cos)), 
 		fix16_mul(theta_sin, alpha_sin)), thrust_converted);	// Thrust in X-Direction
     u->data[1][0] = fix16_mul(fix16_sub(fix16_mul(theta_sin, fix16_mul(beta_sin, alpha_cos)), 
@@ -130,6 +137,8 @@ void update_u(void) {
 // update observation vector
 void update_z(void) {
 	mf16 *z = kalman_get_observation_vector(&k_pva_m);
+
+	// const to reduce computation
 	fix16_t helper_const;
 
 	// Time passed since last observation
@@ -141,6 +150,7 @@ void update_z(void) {
 	fix16_t beta = finken_sensor_attitude.theta * (1<<(16-INT32_ANGLE_FRAC));
 	fix16_t theta = finken_sensor_attitude.psi * (1<<(16-INT32_ANGLE_FRAC));
 
+	// Trigonometric variables to reduce future computation
 	fix16_t alpha_sin = fix16_sin(alpha);
 	fix16_t alpha_cos = fix16_cos(alpha);
 
@@ -163,23 +173,29 @@ void update_z(void) {
 	fix16_t R32 = fix16_mul(beta_cos, alpha_sin);
 	fix16_t R33 = fix16_mul(beta_cos, alpha_cos);
 
+	// get data of flow sensor
 	fix16_t velocity_x = finken_sensor_model.velocity.x / (1<<(INT32_SPEED_FRAC-16));
 	fix16_t velocity_y = finken_sensor_model.velocity.y / (1<<(INT32_SPEED_FRAC-16));
 	fix16_t position_z = finken_sensor_model.pos.z * (1<<(16-INT32_POS_FRAC));
 
+	// compute current velocity in x and y direction and hight
 	position_z = fix16_mul(R33, position_z);
 	helper_const = velocity_x;
 	velocity_x = fix16_add(fix16_mul(R11, velocity_x), fix16_mul(R12, velocity_y));
 	velocity_y = fix16_add(fix16_mul(R21, helper_const), fix16_mul(R22, velocity_y));
 
+	// indirect computation of position difference to last time in x and y 
+	// and velocity in z direction
 	fix16_t velocity_z = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);
 	fix16_t position_x = fix16_mul(fix16_div(fix16_add(velocity_x, z->data[3][0]), fix16_from_float(2.0)), diff);
 	fix16_t position_y = fix16_mul(fix16_div(fix16_add(velocity_y, z->data[4][0]), fix16_from_float(2.0)), diff);
 
+	// get accelerometer data
 	fix16_t acceleration_x = finken_sensor_model.acceleration.x * (1<<(16-INT32_ACCEL_FRAC));
 	fix16_t acceleration_y = finken_sensor_model.acceleration.y * (1<<(16-INT32_ACCEL_FRAC));
 	fix16_t acceleration_z = finken_sensor_model.acceleration.z * (1<<(16-INT32_ACCEL_FRAC));
 
+	// update measurement vector vector
 	z->data[0][0] += position_x;	// pos_x
     z->data[1][0] += position_y;	// pos_y
 	z->data[2][0] = position_z;		// pos_z
@@ -190,6 +206,7 @@ void update_z(void) {
     z->data[7][0] = fix16_add(fix16_add(fix16_mul(R21, acceleration_x), fix16_mul(R22, acceleration_y)), fix16_mul(R23, acceleration_z));	// acc_y
     z->data[8][0] = fix16_add(fix16_add(fix16_mul(R31, acceleration_x), fix16_mul(R32, acceleration_y)), fix16_mul(R33, acceleration_z));	// acc_z
 
+	// update timestamp
 	last_time = now;
 }
 
@@ -200,11 +217,11 @@ void kalman_init(void) {
 	const fix16_t dt_2 = fix16_sq(dt);
 	const fix16_t dt_3 = fix16_mul(dt, dt_2);
 	const fix16_t dt_4 = fix16_sq(dt_2);
+
 	m = fix16_from_float(304.0);				// SET MASS!!! [g]
 	const fix16_t init_uncert = fix16_from_float(0.1);		// SET INITIAL UNCERTEANTY!!!
 	const fix16_t sigma = fix16_from_float(20.0);			// SET SIGMA!!!
 	fix16_t helper_const;									// varible to speed up matrix assignment
-	last_time = 0;
 
 	// init output struct
 	kalman_sv_init();
@@ -215,248 +232,50 @@ void kalman_init(void) {
 	// init observation
 	kalman_observation_initialize(&k_pva_m, K_NUM_S, K_NUM_MEAS);
 
-	// get state vector from struct
-	mf16 *x = kalman_get_state_vector(&k_pva);
-
-	// set state vector
-	x->data[0][0] = 0;	// pos_x
-    x->data[1][0] = 0;	// pos_y
-    x->data[2][0] = 0;	// pos_z
-	x->data[3][0] = 0;	// vel_x
-    x->data[4][0] = 0;	// vel_y
-    x->data[5][0] = 0;	// vel_z
-	x->data[6][0] = 0;	// acc_x
-    x->data[7][0] = 0;	// acc_y
-    x->data[8][0] = 0;	// acc_z
-
 	// get system state transition model matrix from struct
 	mf16 *A = kalman_get_state_transition(&k_pva);
 
 	matrix_set(A, 0, 0, fix16_one);
-	matrix_set(A, 0, 1, 0);
-	matrix_set(A, 0, 2, 0);
 	matrix_set(A, 0, 3, dt);
-	matrix_set(A, 0, 4, 0);
-	matrix_set(A, 0, 5, 0);
-	matrix_set(A, 0, 6, 0);
-	matrix_set(A, 0, 7, 0);
-	matrix_set(A, 0, 8, 0);
 
-	matrix_set(A, 1, 0, 0);
 	matrix_set(A, 1, 1, fix16_one);
-	matrix_set(A, 1, 2, 0);
-	matrix_set(A, 1, 3, 0);
 	matrix_set(A, 1, 4, dt);
-	matrix_set(A, 1, 5, 0);
-	matrix_set(A, 1, 6, 0);
-	matrix_set(A, 1, 7, 0);
-	matrix_set(A, 1, 8, 0);
 	
-	matrix_set(A, 2, 0, 0);
-	matrix_set(A, 2, 1, 0);
 	matrix_set(A, 2, 2, fix16_one);
-	matrix_set(A, 2, 3, 0);
-	matrix_set(A, 2, 4, 0);
 	matrix_set(A, 2, 5, dt);
-	matrix_set(A, 2, 6, 0);
-	matrix_set(A, 2, 7, 0);
-	matrix_set(A, 2, 8, 0);
 
-	matrix_set(A, 3, 0, 0);
-	matrix_set(A, 3, 1, 0);
-	matrix_set(A, 3, 2, 0);
 	matrix_set(A, 3, 3, fix16_one);
-	matrix_set(A, 3, 4, 0);
-	matrix_set(A, 3, 5, 0);
-	matrix_set(A, 3, 6, 0);
-	matrix_set(A, 3, 7, 0);
-	matrix_set(A, 3, 8, 0);
 
-	matrix_set(A, 4, 0, 0);
-	matrix_set(A, 4, 1, 0);
-	matrix_set(A, 4, 2, 0);
-	matrix_set(A, 4, 3, 0);
 	matrix_set(A, 4, 4, fix16_one);
-	matrix_set(A, 4, 5, 0);
-	matrix_set(A, 4, 6, 0);
-	matrix_set(A, 4, 7, 0);
-	matrix_set(A, 4, 8, 0);
 
-	matrix_set(A, 5, 0, 0);
-	matrix_set(A, 5, 1, 0);
-	matrix_set(A, 5, 2, 0);
-	matrix_set(A, 5, 3, 0);
-	matrix_set(A, 5, 4, 0);
 	matrix_set(A, 5, 5, fix16_one);
-	matrix_set(A, 5, 6, 0);
-	matrix_set(A, 5, 7, 0);
-	matrix_set(A, 5, 8, 0);
 
-	matrix_set(A, 6, 0, 0);
-	matrix_set(A, 6, 1, 0);
-	matrix_set(A, 6, 2, 0);
-	matrix_set(A, 6, 3, 0);
-	matrix_set(A, 6, 4, 0);
-	matrix_set(A, 6, 5, 0);
-	matrix_set(A, 6, 6, 0);
-	matrix_set(A, 6, 7, 0);
-	matrix_set(A, 6, 8, 0);
-
-	matrix_set(A, 7, 0, 0);
-	matrix_set(A, 7, 1, 0);
-	matrix_set(A, 7, 2, 0);
-	matrix_set(A, 7, 3, 0);
-	matrix_set(A, 7, 4, 0);
-	matrix_set(A, 7, 5, 0);
-	matrix_set(A, 7, 6, 0);
-	matrix_set(A, 7, 7, 0);
-	matrix_set(A, 7, 8, 0);
-
-	matrix_set(A, 8, 0, 0);
-	matrix_set(A, 8, 1, 0);
-	matrix_set(A, 8, 2, 0);
-	matrix_set(A, 8, 3, 0);
-	matrix_set(A, 8, 4, 0);
-	matrix_set(A, 8, 5, 0);
-	matrix_set(A, 8, 6, 0);
-	matrix_set(A, 8, 7, 0);
-	matrix_set(A, 8, 8, 0);
 
 	// get control input model matrix from struct
 	mf16 *B = kalman_get_input_transition(&k_pva);
 
 	helper_const = fix16_div(dt_2, fix16_mul(2, m));
-
 	matrix_set(B, 0, 0, helper_const);
-	matrix_set(B, 0, 1, 0);
-	matrix_set(B, 0, 2, 0);
-
-	matrix_set(B, 1, 0, 0);
 	matrix_set(B, 1, 1, helper_const);
-	matrix_set(B, 1, 2, 0);
-	
-	matrix_set(B, 2, 0, 0);
-	matrix_set(B, 2, 1, 0);
 	matrix_set(B, 2, 2, helper_const);
 
 	helper_const = fix16_div(dt, m);
-
 	matrix_set(B, 3, 0, helper_const);
-	matrix_set(B, 3, 1, 0);
-	matrix_set(B, 3, 2, 0);
-
-	matrix_set(B, 4, 0, 0);
 	matrix_set(B, 4, 1, helper_const);
-	matrix_set(B, 4, 2, 0);
-	
-	matrix_set(B, 5, 0, 0);
-	matrix_set(B, 5, 1, 0);
 	matrix_set(B, 5, 2, helper_const);
 
 	helper_const = fix16_div(fix16_one, m);
-
 	matrix_set(B, 6, 0, helper_const);
-	matrix_set(B, 6, 1, 0);
-	matrix_set(B, 6, 2, 0);
-
-	matrix_set(B, 7, 0, 0);
 	matrix_set(B, 7, 1, helper_const);
-	matrix_set(B, 7, 2, 0);
-	
-	matrix_set(B, 8, 0, 0);
-	matrix_set(B, 8, 1, 0);
 	matrix_set(B, 8, 2, helper_const);
 
 	// get square system state covariance matrix from struct
 	mf16 *P = kalman_get_system_covariance(&k_pva);
-	matrix_set(P, 0, 0, 0);
-	matrix_set(P, 0, 1, 0);
-	matrix_set(P, 0, 2, 0);
-	matrix_set(P, 0, 3, 0);
-	matrix_set(P, 0, 4, 0);
-	matrix_set(P, 0, 5, 0);
-	matrix_set(P, 0, 6, 0);
-	matrix_set(P, 0, 7, 0);
-	matrix_set(P, 0, 8, 0);
 
-	matrix_set(P, 1, 0, 0);
-	matrix_set(P, 1, 1, 0);
-	matrix_set(P, 1, 2, 0);
-	matrix_set(P, 1, 3, 0);
-	matrix_set(P, 1, 4, 0);
-	matrix_set(P, 1, 5, 0);
-	matrix_set(P, 1, 6, 0);
-	matrix_set(P, 1, 7, 0);
-	matrix_set(P, 1, 8, 0);
-
-	matrix_set(P, 2, 0, 0);
-	matrix_set(P, 2, 1, 0);
-	matrix_set(P, 2, 2, 0);
-	matrix_set(P, 2, 3, 0);
-	matrix_set(P, 2, 4, 0);
-	matrix_set(P, 2, 5, 0);
-	matrix_set(P, 2, 6, 0);
-	matrix_set(P, 2, 7, 0);
-	matrix_set(P, 2, 8, 0);
-
-	matrix_set(P, 3, 0, 0);
-	matrix_set(P, 3, 1, 0);
-	matrix_set(P, 3, 2, 0);
-	matrix_set(P, 3, 3, 0);
-	matrix_set(P, 3, 4, 0);
-	matrix_set(P, 3, 5, 0);
-	matrix_set(P, 3, 6, 0);
-	matrix_set(P, 3, 7, 0);
-	matrix_set(P, 3, 8, 0);
-
-	matrix_set(P, 4, 0, 0);
-	matrix_set(P, 4, 1, 0);
-	matrix_set(P, 4, 2, 0);
-	matrix_set(P, 4, 3, 0);
-	matrix_set(P, 4, 4, 0);
-	matrix_set(P, 4, 5, 0);
-	matrix_set(P, 4, 6, 0);
-	matrix_set(P, 4, 7, 0);
-	matrix_set(P, 4, 8, 0);
-
-	matrix_set(P, 5, 0, 0);
-	matrix_set(P, 5, 1, 0);
-	matrix_set(P, 5, 2, 0);
-	matrix_set(P, 5, 3, 0);
-	matrix_set(P, 5, 4, 0);
-	matrix_set(P, 5, 5, 0);
-	matrix_set(P, 5, 6, 0);
-	matrix_set(P, 5, 7, 0);
-	matrix_set(P, 5, 8, 0);
-
-	matrix_set(P, 6, 0, 0);
-	matrix_set(P, 6, 1, 0);
-	matrix_set(P, 6, 2, 0);
-	matrix_set(P, 6, 3, 0);
-	matrix_set(P, 6, 4, 0);
-	matrix_set(P, 6, 5, 0);
 	matrix_set(P, 6, 6, init_uncert);
-	matrix_set(P, 6, 7, 0);
-	matrix_set(P, 6, 8, 0);
 
-	matrix_set(P, 7, 0, 0);
-	matrix_set(P, 7, 1, 0);
-	matrix_set(P, 7, 2, 0);
-	matrix_set(P, 7, 3, 0);
-	matrix_set(P, 7, 4, 0);
-	matrix_set(P, 7, 5, 0);
-	matrix_set(P, 7, 6, 0);
 	matrix_set(P, 7, 7, init_uncert);
-	matrix_set(P, 7, 8, 0);
 
-	matrix_set(P, 8, 0, 0);
-	matrix_set(P, 8, 1, 0);
-	matrix_set(P, 8, 2, 0);
-	matrix_set(P, 8, 3, 0);
-	matrix_set(P, 8, 4, 0);
-	matrix_set(P, 8, 5, 0);
-	matrix_set(P, 8, 6, 0);
-	matrix_set(P, 8, 7, 0);
 	matrix_set(P, 8, 8, init_uncert);
 
 	// get square contol input covariance matrix from struct
@@ -500,254 +319,50 @@ void kalman_init(void) {
 	matrix_set(Q, 7, 7, sigma);
 	matrix_set(Q, 8, 8, sigma);
 
-	matrix_set(Q, 0, 1, 0);
-	matrix_set(Q, 0, 2, 0);
-	matrix_set(Q, 0, 4, 0);
-	matrix_set(Q, 0, 5, 0);
-	matrix_set(Q, 0, 7, 0);
-	matrix_set(Q, 0, 8, 0);
-
-	matrix_set(Q, 1, 0, 0);
-	matrix_set(Q, 1, 2, 0);
-	matrix_set(Q, 1, 3, 0);
-	matrix_set(Q, 1, 5, 0);
-	matrix_set(Q, 1, 6, 0);
-	matrix_set(Q, 1, 8, 0);
-
-	matrix_set(Q, 2, 0, 0);
-	matrix_set(Q, 2, 1, 0);
-	matrix_set(Q, 2, 3, 0);
-	matrix_set(Q, 2, 4, 0);
-	matrix_set(Q, 2, 6, 0);
-	matrix_set(Q, 2, 7, 0);
-
-	matrix_set(Q, 3, 1, 0);
-	matrix_set(Q, 3, 2, 0);
-	matrix_set(Q, 3, 4, 0);
-	matrix_set(Q, 3, 5, 0);
-	matrix_set(Q, 3, 7, 0);
-	matrix_set(Q, 3, 8, 0);
-
-	matrix_set(Q, 4, 0, 0);
-	matrix_set(Q, 4, 2, 0);
-	matrix_set(Q, 4, 3, 0);
-	matrix_set(Q, 4, 5, 0);
-	matrix_set(Q, 4, 6, 0);
-	matrix_set(Q, 4, 8, 0);
-
-	matrix_set(Q, 5, 0, 0);
-	matrix_set(Q, 5, 1, 0);
-	matrix_set(Q, 5, 3, 0);
-	matrix_set(Q, 5, 4, 0);
-	matrix_set(Q, 5, 6, 0);
-	matrix_set(Q, 5, 7, 0);
-
-	matrix_set(Q, 6, 1, 0);
-	matrix_set(Q, 6, 2, 0);
-	matrix_set(Q, 6, 4, 0);
-	matrix_set(Q, 6, 5, 0);
-	matrix_set(Q, 6, 7, 0);
-	matrix_set(Q, 6, 8, 0);
-
-	matrix_set(Q, 7, 0, 0);
-	matrix_set(Q, 7, 2, 0);
-	matrix_set(Q, 7, 3, 0);
-	matrix_set(Q, 7, 5, 0);
-	matrix_set(Q, 7, 6, 0);
-	matrix_set(Q, 7, 8, 0);
-
-	matrix_set(Q, 8, 0, 0);
-	matrix_set(Q, 8, 1, 0);
-	matrix_set(Q, 8, 3, 0);
-	matrix_set(Q, 8, 4, 0);
-	matrix_set(Q, 8, 6, 0);
-	matrix_set(Q, 8, 7, 0);
-
 	// get observation model matrix from struct
 	mf16 *H = kalman_get_observation_transformation(&k_pva_m);
 
     matrix_set(H, 0, 0, fix16_one);
-	matrix_set(H, 0, 1, 0);
-	matrix_set(H, 0, 2, 0);
-	matrix_set(H, 0, 3, 0);
-	matrix_set(H, 0, 4, 0);
-	matrix_set(H, 0, 5, 0);
-	matrix_set(H, 0, 6, 0);
-	matrix_set(H, 0, 7, 0);
-	matrix_set(H, 0, 8, 0);
 
-	matrix_set(H, 1, 0, 0);
 	matrix_set(H, 1, 1, fix16_one);
-	matrix_set(H, 1, 2, 0);
-	matrix_set(H, 1, 3, 0);
-	matrix_set(H, 1, 4, 0);
-	matrix_set(H, 1, 5, 0);
-	matrix_set(H, 1, 6, 0);
-	matrix_set(H, 1, 7, 0);
-	matrix_set(H, 1, 8, 0);
 	
-	matrix_set(H, 2, 0, 0);
-	matrix_set(H, 2, 1, 0);
 	matrix_set(H, 2, 2, fix16_one);
-	matrix_set(H, 2, 3, 0);
-	matrix_set(H, 2, 4, 0);
-	matrix_set(H, 2, 5, 0);
-	matrix_set(H, 2, 6, 0);
-	matrix_set(H, 2, 7, 0);
-	matrix_set(H, 2, 8, 0);
 
-	matrix_set(H, 3, 0, 0);
-	matrix_set(H, 3, 1, 0);
-	matrix_set(H, 3, 2, 0);
 	matrix_set(H, 3, 3, fix16_one);
-	matrix_set(H, 3, 4, 0);
-	matrix_set(H, 3, 5, 0);
-	matrix_set(H, 3, 6, 0);
-	matrix_set(H, 3, 7, 0);
-	matrix_set(H, 3, 8, 0);
 
-	matrix_set(H, 4, 0, 0);
-	matrix_set(H, 4, 1, 0);
-	matrix_set(H, 4, 2, 0);
-	matrix_set(H, 4, 3, 0);
 	matrix_set(H, 4, 4, fix16_one);
-	matrix_set(H, 4, 5, 0);
-	matrix_set(H, 4, 6, 0);
-	matrix_set(H, 4, 7, 0);
-	matrix_set(H, 4, 8, 0);
 
-	matrix_set(H, 5, 0, 0);
-	matrix_set(H, 5, 1, 0);
-	matrix_set(H, 5, 2, 0);
-	matrix_set(H, 5, 3, 0);
-	matrix_set(H, 5, 4, 0);
 	matrix_set(H, 5, 5, fix16_one);
-	matrix_set(H, 5, 6, 0);
-	matrix_set(H, 5, 7, 0);
-	matrix_set(H, 5, 8, 0);
 
-	matrix_set(H, 6, 0, 0);
-	matrix_set(H, 6, 1, 0);
-	matrix_set(H, 6, 2, 0);
-	matrix_set(H, 6, 3, 0);
-	matrix_set(H, 6, 4, 0);
-	matrix_set(H, 6, 5, 0);
 	matrix_set(H, 6, 6, fix16_one);
-	matrix_set(H, 6, 7, 0);
-	matrix_set(H, 6, 8, 0);
 
-	matrix_set(H, 7, 0, 0);
-	matrix_set(H, 7, 1, 0);
-	matrix_set(H, 7, 2, 0);
-	matrix_set(H, 7, 3, 0);
-	matrix_set(H, 7, 4, 0);
-	matrix_set(H, 7, 5, 0);
-	matrix_set(H, 7, 6, 0);
 	matrix_set(H, 7, 7, fix16_one);
-	matrix_set(H, 7, 8, 0);
 
-	matrix_set(H, 8, 0, 0);
-	matrix_set(H, 8, 1, 0);
-	matrix_set(H, 8, 2, 0);
-	matrix_set(H, 8, 3, 0);
-	matrix_set(H, 8, 4, 0);
-	matrix_set(H, 8, 5, 0);
-	matrix_set(H, 8, 6, 0);
-	matrix_set(H, 8, 7, 0);
 	matrix_set(H, 8, 8, fix16_one);
 
     // get square observation covariance matrix from struct
     mf16 *R = kalman_get_observation_process_noise(&k_pva_m);		// SET OBSERVATION ERROR
 
     matrix_set(R, 0, 0, fix16_from_float(0.1));
-	matrix_set(R, 0, 1, 0);
-	matrix_set(R, 0, 2, 0);
-	matrix_set(R, 0, 3, 0);
-	matrix_set(R, 0, 4, 0);
-	matrix_set(R, 0, 5, 0);
-	matrix_set(R, 0, 6, 0);
-	matrix_set(R, 0, 7, 0);
-	matrix_set(R, 0, 8, 0);
 
-	matrix_set(R, 1, 0, 0);
 	matrix_set(R, 1, 1, fix16_from_float(0.1));
-	matrix_set(R, 1, 2, 0);
-	matrix_set(R, 1, 3, 0);
-	matrix_set(R, 1, 4, 0);
-	matrix_set(R, 1, 5, 0);
-	matrix_set(R, 1, 6, 0);
-	matrix_set(R, 1, 7, 0);
-	matrix_set(R, 1, 8, 0);
 	
-	matrix_set(R, 2, 0, 0);
-	matrix_set(R, 2, 1, 0);
 	matrix_set(R, 2, 2, fix16_from_float(0.01));
-	matrix_set(R, 2, 3, 0);
-	matrix_set(R, 2, 4, 0);
-	matrix_set(R, 2, 5, 0);
-	matrix_set(R, 2, 6, 0);
-	matrix_set(R, 2, 7, 0);
-	matrix_set(R, 2, 8, 0);
 
-	matrix_set(R, 3, 0, 0);
-	matrix_set(R, 3, 1, 0);
-	matrix_set(R, 3, 2, 0);
 	matrix_set(R, 3, 3, fix16_from_float(1.0));
-	matrix_set(R, 3, 4, 0);
-	matrix_set(R, 3, 5, 0);
-	matrix_set(R, 3, 6, 0);
-	matrix_set(R, 3, 7, 0);
-	matrix_set(R, 3, 8, 0);
 
-	matrix_set(R, 4, 0, 0);
-	matrix_set(R, 4, 1, 0);
-	matrix_set(R, 4, 2, 0);
-	matrix_set(R, 4, 3, 0);
 	matrix_set(R, 4, 4, fix16_from_float(1.0));
-	matrix_set(R, 4, 5, 0);
-	matrix_set(R, 4, 6, 0);
-	matrix_set(R, 4, 7, 0);
-	matrix_set(R, 4, 8, 0);
 
-	matrix_set(R, 5, 0, 0);
-	matrix_set(R, 5, 1, 0);
-	matrix_set(R, 5, 2, 0);
-	matrix_set(R, 5, 3, 0);
-	matrix_set(R, 5, 4, 0);
 	matrix_set(R, 5, 5, fix16_from_float(0.1));
-	matrix_set(R, 5, 6, 0);
-	matrix_set(R, 5, 7, 0);
-	matrix_set(R, 5, 8, 0);
 
-	matrix_set(R, 6, 0, 0);
-	matrix_set(R, 6, 1, 0);
-	matrix_set(R, 6, 2, 0);
-	matrix_set(R, 6, 3, 0);
-	matrix_set(R, 6, 4, 0);
-	matrix_set(R, 6, 5, 0);
 	matrix_set(R, 6, 6, fix16_from_float(1.0));
-	matrix_set(R, 6, 7, 0);
-	matrix_set(R, 6, 8, 0);
 
-	matrix_set(R, 7, 0, 0);
-	matrix_set(R, 7, 1, 0);
-	matrix_set(R, 7, 2, 0);
-	matrix_set(R, 7, 3, 0);
-	matrix_set(R, 7, 4, 0);
-	matrix_set(R, 7, 5, 0);
-	matrix_set(R, 7, 6, 0);
 	matrix_set(R, 7, 7, fix16_from_float(1.0));
-	matrix_set(R, 7, 8, 0);
 
-	matrix_set(R, 8, 0, 0);
-	matrix_set(R, 8, 1, 0);
-	matrix_set(R, 8, 2, 0);
-	matrix_set(R, 8, 3, 0);
-	matrix_set(R, 8, 4, 0);
-	matrix_set(R, 8, 5, 0);
-	matrix_set(R, 8, 6, 0);
-	matrix_set(R, 8, 7, 0);
 	matrix_set(R, 8, 8, fix16_from_float(1.0));
+
+	// init timestamp
+	last_time = get_sys_time_msec();
 
 	update_u();
 	update_z();
