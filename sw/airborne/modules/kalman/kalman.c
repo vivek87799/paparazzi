@@ -96,7 +96,7 @@ void update_u(void) {
 		fix16_mul(theta_cos, alpha_sin)), thrust_converted);	// Thrust in X-Direction
     u->data[1][0] = fix16_mul(fix16_sub(fix16_mul(theta_sin, fix16_mul(beta_sin, alpha_cos)), 
 		fix16_mul(theta_cos, alpha_sin)), thrust_converted);	// Thrust in Y-Direction
-    u->data[2][0] = fix16_mul(fix16_mul(beta_cos, alpha_cos), thrust_converted);	// Thrust in Z-Direction
+    u->data[2][0] = fix16_mul(fix16_mul(beta_cos, alpha_cos), fix16_sub(thrust_converted, fix16_mul(m, G)));	// Thrust in Z-Direction
 }
 
 // update observation vector
@@ -119,11 +119,11 @@ void update_z(void) {
 // initialize kalman filter
 void kalman_init(void) {
 	// time and other constants
-	const fix16_t dt = fix16_div(fix16_one,fix16_from_float(30.0));		// SET TIME CONSTANT!!!
+	const fix16_t dt = fix16_div(fix16_one,fix16_from_float(10.0));		// SET TIME CONSTANT!!!
 	const fix16_t dt_2 = fix16_sq(dt);
 	const fix16_t dt_3 = fix16_mul(dt, dt_2);
 	const fix16_t dt_4 = fix16_sq(dt_2);
-	const fix16_t m = fix16_from_float(0.29);				// SET MASS!!!
+	const fix16_t m = fix16_from_float(290);				// SET MASS!!! [g]
 	const fix16_t init_uncert = fix16_from_float(1.0);		// SET INITIAL UNCERTEANTY!!!
 	const fix16_t sigma = fix16_from_float(1.0);			// SET SIGMA!!!
 	fix16_t helper_const;									// varible to speed up matrix assignment
