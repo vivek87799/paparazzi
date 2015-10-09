@@ -11,6 +11,7 @@
 #include "mcu_periph/link_device.h"
 #include "subsystems/datalink/transport.h"
 #include "subsystems/datalink/telemetry.h"
+#include "modules/kalman/libfixmath/fix16.h"
 
 struct state_vector_kalman
 {
@@ -25,6 +26,12 @@ struct state_vector_kalman
 	int32_t acc_z;
 }; 
 
+struct last_measurement_vertical_positions
+{
+	fix16_t x;
+	fix16_t y;
+}; 
+
 extern void update_u(void);
 extern void update_z(void);
 extern void kalman_init(void);
@@ -32,6 +39,7 @@ extern void predict(void);
 extern void correct(void);
 extern void update_output(void);
 extern void kalman_sv_init(void);
+extern void meas_pos_init(void);
 
 extern void send_kalman_telemetry(struct transport_tx *trans, struct link_device* link);
 
