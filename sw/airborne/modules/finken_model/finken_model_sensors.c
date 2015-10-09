@@ -50,7 +50,6 @@ void finken_sensor_model_init(void)
   memset(&finken_sensor_model, 0, sizeof(struct sensor_model_s));
 
   register_periodic_telemetry(DefaultPeriodic, "FINKEN_SENSOR_MODEL", send_finken_sensor_model_telemetry);
-  register_periodic_telemetry(DefaultPeriodic, "HC_DEBUG", send_finken_hc_debug);
 }
 
 void finken_sensor_model_periodic(void)
@@ -103,22 +102,11 @@ void finken_sensor_model_periodic(void)
 	}
 }
 
-void send_finken_hc_debug(struct transport_tx *trans, struct link_device* link) {
-	float pos_z = POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
-  DOWNLINK_SEND_HC_DEBUG(
-    DefaultChannel,
-    DefaultDevice,
-		&pos_z,
-		&finken_actuators_set_point.thrust,
-		&finken_actuators_set_point.pitch,
-		&finken_actuators_set_point.roll,
-		&finken_actuators_set_point.yaw
-	);
-}
-
 void send_finken_sensor_model_telemetry(struct transport_tx *trans, struct link_device* link) {
   trans=trans;
   link=link;
+  struct Int32Eulers attitude;
+  int32_eulers_of_quat(&attitude, &finken_sensor_model.attitude);
 
 	float pos_x      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.x);
 	float pos_y      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.y);
