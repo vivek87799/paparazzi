@@ -8,7 +8,7 @@
     <file name="sensor_filter.h"/>
   </header>
   <init fun="sensor_filter_init()" />
-  <periodic fun="sensor_filter_periodic()" freq="60" />
+  <periodic fun="sensor_filter_periodic()" freq="1" />
   <makefile>
     <file name="sensor_filter.c"/>
   </makefile>
