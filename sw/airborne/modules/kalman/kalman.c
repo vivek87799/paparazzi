@@ -11,9 +11,11 @@
 #include "modules/kalman/libfixmath/fix16.h"				// conversions to fix16
 #include "math/pprz_algebra_int.h"							// fixpoint arithmetic
 #include "modules/finken_model/finken_model_actuators.h"	// source of control parameters for u
+#include "modules/finken_model/finken_model_sensors.h"
 #include "subsystems/radio_control.h"
 
 int32_t dt_last_measure;
+uint32_t last_time;
 struct state_vector_kalman kalman_sv_pva;
 
 #define G	9.81
@@ -68,8 +70,6 @@ void kalman_sv_init(void) {
 
 	register_periodic_telemetry(DefaultPeriodic, "KALMAN", send_kalman_telemetry);
 }
-
-//0,01514x2+0,65268x
 
 // update input vector
 void update_u(void) {
@@ -128,17 +128,24 @@ void update_u(void) {
 void update_z(void) {
 	mf16 *z = kalman_get_observation_vector(&k_pva_m);
 
-	// ToDo
+	uint32_t now = get_sys_time_msec();
+	fix16_t diff = fix16_div(fix16_from_float((float)(now - last_time)), fix16_from_float(1000.0));
 
-	//z->data[0][0] = 0;	// pos_x
-    //z->data[1][0] = 0;	// pos_y
-    //z->data[2][0] = 0;	// pos_z
-	//z->data[3][0] = 0;	// vel_x
-    //z->data[4][0] = 0;	// vel_y
-    //z->data[5][0] = 0;	// vel_z
-	//z->data[6][0] = 0;	// acc_x
-    //z->data[7][0] = 0;	// acc_y
-    //z->data[8][0] = 0;	// acc_z
+	fix16_t velocity_x = finken_sensor_model.velocity.x / (1<<(INT32_SPEED_FRAC-16));
+	fix16_t velocity_y = finken_sensor_model.velocity.y / (1<<(INT32_SPEED_FRAC-16));
+	fix16_t position_z = finken_sensor_model.pos.z * (1<<(16-INT32_POS_FRAC));
+
+	z->data[0][0] += fix16_mul(fix16_div(fix16_add(velocity_x, z->data[2][0]), fix16_from_float(2.0)), diff);	// pos_x
+    z->data[1][0] += fix16_mul(fix16_div(fix16_add(velocity_y, z->data[3][0]), fix16_from_float(2.0)), diff);	// pos_y
+	z->data[5][0] = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);	// vel_z
+    z->data[2][0] = position_z;	// pos_z
+	z->data[3][0] = velocity_x;	// vel_x
+    z->data[4][0] = velocity_y;	// vel_y
+	z->data[6][0] = finken_sensor_model.acceleration.x * (1<<(16-INT32_ACCEL_FRAC));	// acc_x
+    z->data[7][0] = finken_sensor_model.acceleration.y * (1<<(16-INT32_ACCEL_FRAC));	// acc_y
+    z->data[8][0] = finken_sensor_model.acceleration.z * (1<<(16-INT32_ACCEL_FRAC));	// acc_z
+
+	last_time = now;
 }
 
 // initialize kalman filter
@@ -152,6 +159,7 @@ void kalman_init(void) {
 	const fix16_t init_uncert = fix16_from_float(1.0);		// SET INITIAL UNCERTEANTY!!!
 	const fix16_t sigma = fix16_from_float(1.0);			// SET SIGMA!!!
 	fix16_t helper_const;									// varible to speed up matrix assignment
+	last_time = 0;
 
 	// init output struct
 	kalman_sv_init();
@@ -703,19 +711,19 @@ extern void update_output(void) {
 	mf16 *x = kalman_get_state_vector(&k_pva);
 
 	// positions
-	kalman_sv_pva.pos_x = (x->data[0][0]) >> (16-INT32_POS_FRAC);
-	kalman_sv_pva.pos_y = (x->data[1][0]) >> (16-INT32_POS_FRAC);
-	kalman_sv_pva.pos_z = (x->data[2][0]) >> (16-INT32_POS_FRAC);
+	kalman_sv_pva.pos_x = (x->data[0][0]) / (1<<(16-INT32_POS_FRAC));
+	kalman_sv_pva.pos_y = (x->data[1][0]) / (1<<(16-INT32_POS_FRAC));
+	kalman_sv_pva.pos_z = (x->data[2][0]) / (1<<(16-INT32_POS_FRAC));
 
 	// velocity
-	kalman_sv_pva.vel_x = (x->data[3][0]) << (INT32_SPEED_FRAC-16);
-	kalman_sv_pva.vel_y = (x->data[4][0]) << (INT32_SPEED_FRAC-16);
-	kalman_sv_pva.vel_z = (x->data[5][0]) << (INT32_SPEED_FRAC-16);
+	kalman_sv_pva.vel_x = (x->data[3][0]) * (1<<(INT32_SPEED_FRAC-16));
+	kalman_sv_pva.vel_y = (x->data[4][0]) * (1<<(INT32_SPEED_FRAC-16));
+	kalman_sv_pva.vel_z = (x->data[5][0]) * (1<<(INT32_SPEED_FRAC-16));
 
 	// acceleration
-	kalman_sv_pva.acc_x = (x->data[6][0]) >> (16-INT32_ACCEL_FRAC);
-	kalman_sv_pva.acc_y = (x->data[7][0]) >> (16-INT32_ACCEL_FRAC);
-	kalman_sv_pva.acc_z = (x->data[8][0]) >> (16-INT32_ACCEL_FRAC);
+	kalman_sv_pva.acc_x = (x->data[6][0]) / (1<<(16-INT32_ACCEL_FRAC));
+	kalman_sv_pva.acc_y = (x->data[7][0]) / (1<<(16-INT32_ACCEL_FRAC));
+	kalman_sv_pva.acc_z = (x->data[8][0]) / (1<<(16-INT32_ACCEL_FRAC));
 }
 
 // prediction step
@@ -727,8 +735,8 @@ extern void predict(void) {
 
 // correction step
 extern void correct(void) {
-	//update_z();
-	//kalman_correct(&k_pva, &k_pva_m);
+	update_z();
+	kalman_correct(&k_pva, &k_pva_m);
 	update_output();
 }
 
