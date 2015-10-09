@@ -51,6 +51,6 @@ extern void finken_sensor_model_init(void);
 extern void finken_sensor_model_periodic(void);
 
 extern void send_finken_sensor_model_telemetry(struct transport_tx *trans, struct link_device* link);
-void send_finken_hc_debug(struct transport_tx *trans, struct link_device* link);
+extern void send_finken_hc_debug(struct transport_tx *trans, struct link_device* link);
 
 #endif

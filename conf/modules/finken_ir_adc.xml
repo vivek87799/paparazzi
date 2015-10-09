@@ -13,7 +13,7 @@
     </header>
 
     <init fun="finken_ir_adc_init()"/>
-    <periodic fun="finken_ir_adc_periodic()" freq="30"/>
+    <periodic fun="finken_ir_adc_periodic()" freq="60"/>
 
     <makefile>
         <file name="finken_ir_adc.c"/>
