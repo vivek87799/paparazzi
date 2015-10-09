@@ -59,6 +59,8 @@ void kalman_sv_init(void) {
 	kalman_sv_pva.acc_x = 0;
 	kalman_sv_pva.acc_y = 0;
 	kalman_sv_pva.acc_z = 0;
+
+	register_periodic_telemetry(DefaultPeriodic, "KALMAN", send_kalman_telemetry);
 }
 
 // update input vector
@@ -112,7 +114,7 @@ void kalman_init(void) {
 	const fix16_t dt_2 = fix16_sq(dt);
 	const fix16_t dt_3 = fix16_mul(dt, dt_2);
 	const fix16_t dt_4 = fix16_sq(dt_2);
-	const fix16_t m = fix16_from_float(1.0);				// SET MASS!!!
+	const fix16_t m = fix16_from_float(0.29);				// SET MASS!!!
 	const fix16_t init_uncert = fix16_from_float(1.0);		// SET INITIAL UNCERTEANTY!!!
 	const fix16_t sigma = fix16_from_float(1.0);			// SET SIGMA!!!
 	fix16_t helper_const;							// varible to speed up matrix assignment
@@ -694,4 +696,34 @@ extern void correct(void) {
 	update_z();
 	kalman_correct(&k_pva, &k_pva_m);
 	update_output();
+}
+
+// telemetry
+void send_kalman_telemetry(struct transport_tx *trans, struct link_device* link) {
+	trans=trans;
+	link=link;
+
+	float pos_x = POS_FLOAT_OF_BFP(kalman_sv_pva.pos_x);
+	float pos_y = POS_FLOAT_OF_BFP(kalman_sv_pva.pos_y);
+	float pos_z = POS_FLOAT_OF_BFP(kalman_sv_pva.pos_z);
+	float vel_x = SPEED_FLOAT_OF_BFP(kalman_sv_pva.vel_x);
+	float vel_y = SPEED_FLOAT_OF_BFP(kalman_sv_pva.vel_y);
+	float vel_z = SPEED_FLOAT_OF_BFP(kalman_sv_pva.vel_z);
+	float acc_x = ACCEL_FLOAT_OF_BFP(kalman_sv_pva.acc_x);
+	float acc_y = ACCEL_FLOAT_OF_BFP(kalman_sv_pva.acc_y);
+	float acc_z = ACCEL_FLOAT_OF_BFP(kalman_sv_pva.acc_z);
+
+	DOWNLINK_SEND_KALMAN(
+		DefaultChannel,
+		DefaultDevice,
+		&pos_x,
+		&pos_y,
+		&pos_z,
+		&vel_x,
+		&vel_y,
+		&vel_z,
+		&acc_x,
+		&acc_y,
+		&acc_z
+	);
 }

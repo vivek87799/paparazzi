@@ -8,6 +8,9 @@
 #define KALMAN_H
 
 #include <stdint.h>
+#include "mcu_periph/link_device.h"
+#include "subsystems/datalink/transport.h"
+#include "subsystems/datalink/telemetry.h"
 
 struct state_vector_kalman
 {
@@ -29,5 +32,7 @@ extern void predict(void);
 extern void correct(void);
 extern void update_output(void);
 extern void kalman_sv_init(void);
+
+extern void send_kalman_telemetry(struct transport_tx *trans, struct link_device* link);
 
 #endif
