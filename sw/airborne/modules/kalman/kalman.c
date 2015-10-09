@@ -92,10 +92,15 @@ void update_u(void) {
 	*/
 
 	// controll data from controller
-	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (13000*180) * 45 * PI;
-	float beta = ((float) radio_control.values[RADIO_PITCH]) / (13000*180) * 45 * PI;
-	float theta = ((float) radio_control.values[RADIO_YAW]) / (13000*180) * 90 * PI;
-	float throttle = ((float) radio_control.values[RADIO_THROTTLE]) / 26000 * 100;
+	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (9600*180) * 45 * PI;
+	float beta = ((float) radio_control.values[RADIO_PITCH]) / (9600*180) * 45 * PI;
+	float theta = ((float) radio_control.values[RADIO_YAW]) / (9600*180) * 90 * PI;
+	float throttle = ((float) radio_control.values[RADIO_THROTTLE]) / 9600 * 90;
+
+	// delete negative values
+	if(throttle<0.0) {
+		throttle = 0.0;
+	}
 
 	fix16_t alpha_sin = fix16_sin(fix16_from_float(alpha));
 	fix16_t alpha_cos = fix16_cos(fix16_from_float(alpha));
@@ -108,23 +113,28 @@ void update_u(void) {
 
 	fix16_t thrust = fix16_from_float(throttle);
 
-	// Conversionsfunction from Christoph: thrust[g] = 0,01514x^2+0,65268x [% --> gramm] corresponding to 4 motors
+	// Conversionsfunction from Christoph: thrust[g] = 0.01514x^2 + 0.65268x [% --> gramm] corresponding to 4 motors
 	fix16_t thrust_converted = fix16_mul(fix16_add(fix16_mul(fix16_from_float(0.01514), fix16_mul(thrust, thrust)),
 		fix16_mul(fix16_from_float(0.65268), thrust)), fix16_from_float(4.0));
 	thrust_converted = fix16_mul(thrust_converted, fix16_from_float(9.81));
 
 	// update input vector
 	u->data[0][0] = fix16_mul(fix16_add(fix16_mul(theta_cos, fix16_mul(beta_sin, alpha_cos)), 
-		fix16_mul(theta_cos, alpha_sin)), thrust_converted);	// Thrust in X-Direction
+		fix16_mul(theta_sin, alpha_sin)), thrust_converted);	// Thrust in X-Direction
     u->data[1][0] = fix16_mul(fix16_sub(fix16_mul(theta_sin, fix16_mul(beta_sin, alpha_cos)), 
 		fix16_mul(theta_cos, alpha_sin)), thrust_converted);	// Thrust in Y-Direction
-    u->data[2][0] = fix16_sub(fix16_mul(fix16_mul(beta_cos, alpha_cos), thrust_converted), fix16_mul(m, fix16_from_float(9.81)));	// Thrust in Z-Direction
+    u->data[2][0] = fix16_sub(fix16_mul(fix16_mul(beta_cos, alpha_cos), thrust_converted), 
+		fix16_mul(m, fix16_from_float(9.81)));	// Thrust in Z-Direction
 }
 
 // update observation vector
 void update_z(void) {
 	mf16 *z = kalman_get_observation_vector(&k_pva_m);
 	fix16_t helper_const;
+
+	// Time passed since last observation
+	uint32_t now = get_sys_time_msec();
+	fix16_t diff = fix16_div(fix16_from_float((float)(now - last_time)), fix16_from_float(1000.0));
 
 	// Euler-Angles
 	fix16_t alpha = finken_sensor_attitude.phi * (1<<(16-INT32_ANGLE_FRAC));
@@ -153,10 +163,6 @@ void update_z(void) {
 	fix16_t R32 = fix16_mul(beta_cos, alpha_sin);
 	fix16_t R33 = fix16_mul(beta_cos, alpha_cos);
 
-	// Time passed since last observation
-	uint32_t now = get_sys_time_msec();
-	fix16_t diff = fix16_div(fix16_from_float((float)(now - last_time)), fix16_from_float(1000.0));
-
 	fix16_t velocity_x = finken_sensor_model.velocity.x / (1<<(INT32_SPEED_FRAC-16));
 	fix16_t velocity_y = finken_sensor_model.velocity.y / (1<<(INT32_SPEED_FRAC-16));
 	fix16_t position_z = finken_sensor_model.pos.z * (1<<(16-INT32_POS_FRAC));
@@ -167,8 +173,8 @@ void update_z(void) {
 	velocity_y = fix16_add(fix16_mul(R21, helper_const), fix16_mul(R22, velocity_y));
 
 	fix16_t velocity_z = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);
-	fix16_t position_x = fix16_mul(fix16_div(fix16_add(velocity_x, z->data[2][0]), fix16_from_float(2.0)), diff);
-	fix16_t position_y = fix16_mul(fix16_div(fix16_add(velocity_y, z->data[3][0]), fix16_from_float(2.0)), diff);
+	fix16_t position_x = fix16_mul(fix16_div(fix16_add(velocity_x, z->data[3][0]), fix16_from_float(2.0)), diff);
+	fix16_t position_y = fix16_mul(fix16_div(fix16_add(velocity_y, z->data[4][0]), fix16_from_float(2.0)), diff);
 
 	fix16_t acceleration_x = finken_sensor_model.acceleration.x * (1<<(16-INT32_ACCEL_FRAC));
 	fix16_t acceleration_y = finken_sensor_model.acceleration.y * (1<<(16-INT32_ACCEL_FRAC));
@@ -176,10 +182,10 @@ void update_z(void) {
 
 	z->data[0][0] += position_x;	// pos_x
     z->data[1][0] += position_y;	// pos_y
-	z->data[2][0] = position_z;	// pos_z
-	z->data[3][0] = velocity_x;	// vel_x
-    z->data[4][0] = velocity_y;	// vel_y
-	z->data[5][0] = velocity_z;	// vel_z
+	z->data[2][0] = position_z;		// pos_z
+	z->data[3][0] = velocity_x;		// vel_x
+    z->data[4][0] = velocity_y;		// vel_y
+	z->data[5][0] = velocity_z;		// vel_z
 	z->data[6][0] = fix16_add(fix16_add(fix16_mul(R11, acceleration_x), fix16_mul(R12, acceleration_y)), fix16_mul(R13, acceleration_z));	// acc_x
     z->data[7][0] = fix16_add(fix16_add(fix16_mul(R21, acceleration_x), fix16_mul(R22, acceleration_y)), fix16_mul(R23, acceleration_z));	// acc_y
     z->data[8][0] = fix16_add(fix16_add(fix16_mul(R31, acceleration_x), fix16_mul(R32, acceleration_y)), fix16_mul(R33, acceleration_z));	// acc_z
@@ -194,7 +200,7 @@ void kalman_init(void) {
 	const fix16_t dt_2 = fix16_sq(dt);
 	const fix16_t dt_3 = fix16_mul(dt, dt_2);
 	const fix16_t dt_4 = fix16_sq(dt_2);
-	m = fix16_from_float(304);				// SET MASS!!! [g]
+	m = fix16_from_float(304.0);				// SET MASS!!! [g]
 	const fix16_t init_uncert = fix16_from_float(0.1);		// SET INITIAL UNCERTEANTY!!!
 	const fix16_t sigma = fix16_from_float(20.0);			// SET SIGMA!!!
 	fix16_t helper_const;									// varible to speed up matrix assignment
@@ -347,17 +353,19 @@ void kalman_init(void) {
 	matrix_set(B, 5, 1, 0);
 	matrix_set(B, 5, 2, helper_const);
 
-	matrix_set(B, 6, 0, fix16_one);
+	helper_const = fix16_div(fix16_one, m);
+
+	matrix_set(B, 6, 0, helper_const);
 	matrix_set(B, 6, 1, 0);
 	matrix_set(B, 6, 2, 0);
 
 	matrix_set(B, 7, 0, 0);
-	matrix_set(B, 7, 1, fix16_one);
+	matrix_set(B, 7, 1, helper_const);
 	matrix_set(B, 7, 2, 0);
 	
 	matrix_set(B, 8, 0, 0);
 	matrix_set(B, 8, 1, 0);
-	matrix_set(B, 8, 2, fix16_one);
+	matrix_set(B, 8, 2, helper_const);
 
 	// get square system state covariance matrix from struct
 	mf16 *P = kalman_get_system_covariance(&k_pva);
@@ -748,16 +756,34 @@ void kalman_init(void) {
 extern void update_output(void) {
 	// get state vector from struct
 	mf16 *x = kalman_get_state_vector(&k_pva);
+	int8_t on_ground = 0;
 
 	// positions
 	kalman_sv_pva.pos_x = (x->data[0][0]) / (1<<(16-INT32_POS_FRAC));
 	kalman_sv_pva.pos_y = (x->data[1][0]) / (1<<(16-INT32_POS_FRAC));
-	kalman_sv_pva.pos_z = (x->data[2][0]) / (1<<(16-INT32_POS_FRAC));
+
+	// do not fall below starting position
+	if ((x->data[2][0])<0) {
+		kalman_sv_pva.pos_z = 0;
+		x->data[2][0] = 0;
+		on_ground = 1;
+	}
+	else {
+		kalman_sv_pva.pos_z = (x->data[2][0]) / (1<<(16-INT32_POS_FRAC));
+	}
 
 	// velocity
 	kalman_sv_pva.vel_x = (x->data[3][0]) * (1<<(INT32_SPEED_FRAC-16));
 	kalman_sv_pva.vel_y = (x->data[4][0]) * (1<<(INT32_SPEED_FRAC-16));
-	kalman_sv_pva.vel_z = (x->data[5][0]) * (1<<(INT32_SPEED_FRAC-16));
+
+	// if already on ground:
+	if (on_ground == 1) {
+		kalman_sv_pva.vel_z = 0;
+		x->data[5][0] = 0;
+	}
+	else {
+		kalman_sv_pva.vel_z = (x->data[5][0]) * (1<<(INT32_SPEED_FRAC-16));
+	}
 
 	// acceleration
 	kalman_sv_pva.acc_x = (x->data[6][0]) / (1<<(16-INT32_ACCEL_FRAC));
@@ -774,8 +800,8 @@ extern void predict(void) {
 
 // correction step
 extern void correct(void) {
-	//update_z();
-	//kalman_correct(&k_pva, &k_pva_m);
+	update_z();
+	kalman_correct(&k_pva, &k_pva_m);
 	update_output();
 }
 
