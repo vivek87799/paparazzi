@@ -92,10 +92,11 @@ void update_u(void) {
 	fix16_t thrust = fix16_from_float(finken_actuators_model.thrust);
 	*/
 
-	float alpha = (float) radio_control.values[RADIO_ROLL] / (13000*180) * 10 * PI;
-	float beta = (float) radio_control.values[RADIO_PITCH] / (13000*180) * 10 * PI;
-	float theta = (float) radio_control.values[RADIO_YAW] / (13000*180) * 10 * PI;
-	float throttle = (float) radio_control.values[RADIO_THROTTLE] / 13000 * 100;
+	// controll data from controller
+	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (13000*180) * 45 * PI;
+	float beta = ((float) radio_control.values[RADIO_PITCH]) / (13000*180) * 45 * PI;
+	float theta = ((float) radio_control.values[RADIO_YAW]) / (13000*180) * 90 * PI;
+	float throttle = ((float) radio_control.values[RADIO_THROTTLE]) / 26000 * 100;
 
 	fix16_t alpha_sin = fix16_sin(fix16_from_float(alpha));
 	fix16_t alpha_cos = fix16_cos(fix16_from_float(alpha));
@@ -129,6 +130,7 @@ void update_z(void) {
 	mf16 *z = kalman_get_observation_vector(&k_pva_m);
 	fix16_t helper_const;
 
+	// Euler-Angles
 	fix16_t alpha = finken_sensor_attitude.phi * (1<<(16-INT32_ANGLE_FRAC));
 	fix16_t beta = finken_sensor_attitude.theta * (1<<(16-INT32_ANGLE_FRAC));
 	fix16_t theta = finken_sensor_attitude.psi * (1<<(16-INT32_ANGLE_FRAC));
@@ -142,6 +144,7 @@ void update_z(void) {
 	fix16_t theta_sin = fix16_sin(theta);
 	fix16_t theta_cos = fix16_cos(theta);
 
+	// Rotationsmatrix
 	fix16_t R11 = fix16_add(theta_cos, beta_cos);
 	fix16_t R12 = fix16_sub(fix16_mul(fix16_mul(theta_cos, beta_sin), alpha_sin), fix16_mul(theta_sin, alpha_cos));
 	fix16_t R13 = fix16_add(fix16_mul(fix16_mul(theta_cos, beta_sin), alpha_cos), fix16_mul(theta_sin, alpha_sin));
@@ -154,6 +157,7 @@ void update_z(void) {
 	fix16_t R32 = fix16_mul(beta_cos, alpha_sin);
 	fix16_t R33 = fix16_mul(beta_cos, alpha_cos);
 
+	// Time passed since last observation
 	uint32_t now = get_sys_time_msec();
 	fix16_t diff = fix16_div(fix16_from_float((float)(now - last_time)), fix16_from_float(1000.0));
 
@@ -195,8 +199,8 @@ void kalman_init(void) {
 	const fix16_t dt_3 = fix16_mul(dt, dt_2);
 	const fix16_t dt_4 = fix16_sq(dt_2);
 	m = fix16_from_float(304);				// SET MASS!!! [g]
-	const fix16_t init_uncert = fix16_from_float(1.0);		// SET INITIAL UNCERTEANTY!!!
-	const fix16_t sigma = fix16_from_float(1.0);			// SET SIGMA!!!
+	const fix16_t init_uncert = fix16_from_float(0.1);		// SET INITIAL UNCERTEANTY!!!
+	const fix16_t sigma = fix16_from_float(0.1);			// SET SIGMA!!!
 	fix16_t helper_const;									// varible to speed up matrix assignment
 	last_time = 0;
 
@@ -651,7 +655,7 @@ void kalman_init(void) {
     // get square observation covariance matrix from struct
     mf16 *R = kalman_get_observation_process_noise(&k_pva_m);		// SET OBSERVATION ERROR
 
-    matrix_set(R, 0, 0, fix16_one);
+    matrix_set(R, 0, 0, fix16_from_float(0.1));
 	matrix_set(R, 0, 1, 0);
 	matrix_set(R, 0, 2, 0);
 	matrix_set(R, 0, 3, 0);
@@ -662,7 +666,7 @@ void kalman_init(void) {
 	matrix_set(R, 0, 8, 0);
 
 	matrix_set(R, 1, 0, 0);
-	matrix_set(R, 1, 1, fix16_one);
+	matrix_set(R, 1, 1, fix16_from_float(0.1));
 	matrix_set(R, 1, 2, 0);
 	matrix_set(R, 1, 3, 0);
 	matrix_set(R, 1, 4, 0);
@@ -673,7 +677,7 @@ void kalman_init(void) {
 	
 	matrix_set(R, 2, 0, 0);
 	matrix_set(R, 2, 1, 0);
-	matrix_set(R, 2, 2, fix16_one);
+	matrix_set(R, 2, 2, fix16_from_float(0.01));
 	matrix_set(R, 2, 3, 0);
 	matrix_set(R, 2, 4, 0);
 	matrix_set(R, 2, 5, 0);
@@ -684,7 +688,7 @@ void kalman_init(void) {
 	matrix_set(R, 3, 0, 0);
 	matrix_set(R, 3, 1, 0);
 	matrix_set(R, 3, 2, 0);
-	matrix_set(R, 3, 3, fix16_one);
+	matrix_set(R, 3, 3, fix16_from_float(1.0));
 	matrix_set(R, 3, 4, 0);
 	matrix_set(R, 3, 5, 0);
 	matrix_set(R, 3, 6, 0);
@@ -695,7 +699,7 @@ void kalman_init(void) {
 	matrix_set(R, 4, 1, 0);
 	matrix_set(R, 4, 2, 0);
 	matrix_set(R, 4, 3, 0);
-	matrix_set(R, 4, 4, fix16_one);
+	matrix_set(R, 4, 4, fix16_from_float(1.0));
 	matrix_set(R, 4, 5, 0);
 	matrix_set(R, 4, 6, 0);
 	matrix_set(R, 4, 7, 0);
@@ -706,7 +710,7 @@ void kalman_init(void) {
 	matrix_set(R, 5, 2, 0);
 	matrix_set(R, 5, 3, 0);
 	matrix_set(R, 5, 4, 0);
-	matrix_set(R, 5, 5, fix16_one);
+	matrix_set(R, 5, 5, fix16_from_float(0.1));
 	matrix_set(R, 5, 6, 0);
 	matrix_set(R, 5, 7, 0);
 	matrix_set(R, 5, 8, 0);
@@ -717,7 +721,7 @@ void kalman_init(void) {
 	matrix_set(R, 6, 3, 0);
 	matrix_set(R, 6, 4, 0);
 	matrix_set(R, 6, 5, 0);
-	matrix_set(R, 6, 6, fix16_one);
+	matrix_set(R, 6, 6, fix16_from_float(1.0));
 	matrix_set(R, 6, 7, 0);
 	matrix_set(R, 6, 8, 0);
 
@@ -728,7 +732,7 @@ void kalman_init(void) {
 	matrix_set(R, 7, 4, 0);
 	matrix_set(R, 7, 5, 0);
 	matrix_set(R, 7, 6, 0);
-	matrix_set(R, 7, 7, fix16_one);
+	matrix_set(R, 7, 7, fix16_from_float(1.0));
 	matrix_set(R, 7, 8, 0);
 
 	matrix_set(R, 8, 0, 0);
@@ -739,7 +743,7 @@ void kalman_init(void) {
 	matrix_set(R, 8, 5, 0);
 	matrix_set(R, 8, 6, 0);
 	matrix_set(R, 8, 7, 0);
-	matrix_set(R, 8, 8, fix16_one);
+	matrix_set(R, 8, 8, fix16_from_float(1.0));
 
 	update_u();
 	update_z();
