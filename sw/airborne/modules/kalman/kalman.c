@@ -11,11 +11,13 @@
 #include "modules/kalman/libfixmath/fix16.h"				// conversions to fix16
 #include "math/pprz_algebra_int.h"							// fixpoint arithmetic
 #include "modules/finken_model/finken_model_actuators.h"	// source of control parameters for u
+#include "subsystems/radio_control.h"
 
 int32_t dt_last_measure;
 struct state_vector_kalman kalman_sv_pva;
 
 #define G	9.81
+#define PI 3.14159265359
 
 // activate LUT for trigonometric functions
 #define FIXMATH_SIN_LUT
@@ -75,6 +77,7 @@ void update_u(void) {
 	// Roll --> alpha
 	// Pitch --> beta
 	// Yaw --> theta
+	/*
 	fix16_t alpha_sin = fix16_sin(fix16_from_float(finken_actuators_model.alpha));
 	fix16_t alpha_cos = fix16_cos(fix16_from_float(finken_actuators_model.alpha));
 
@@ -85,6 +88,23 @@ void update_u(void) {
 	fix16_t theta_cos = fix16_cos(fix16_from_float(finken_actuators_model.theta));
 
 	fix16_t thrust = fix16_from_float(finken_actuators_model.thrust);
+	*/
+
+	float alpha = (float) radio_control.values[RADIO_ROLL] / (13000*180) * 10 * PI;
+	float beta = (float) radio_control.values[RADIO_PITCH] / (13000*180) * 10 * PI;
+	float theta = (float) radio_control.values[RADIO_YAW] / (13000*180) * 10 * PI;
+	float throttle = (float) radio_control.values[RADIO_THROTTLE] / 13000 * 100;
+
+	fix16_t alpha_sin = fix16_sin(fix16_from_float(alpha));
+	fix16_t alpha_cos = fix16_cos(fix16_from_float(alpha));
+
+	fix16_t beta_sin = fix16_sin(fix16_from_float(beta));
+	fix16_t beta_cos = fix16_cos(fix16_from_float(beta));
+
+	fix16_t theta_sin = fix16_sin(fix16_from_float(theta));
+	fix16_t theta_cos = fix16_cos(fix16_from_float(theta));
+
+	fix16_t thrust = fix16_from_float(throttle);
 
 	// Conversionsfunction from Christoph: thrust[g] = 0,01514x^2+0,65268x [% --> gramm]
 	fix16_t thrust_converted = fix16_add(fix16_mul(fix16_from_float(0.01514), fix16_mul(thrust, thrust)),
