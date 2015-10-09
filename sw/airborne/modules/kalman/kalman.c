@@ -215,12 +215,12 @@ void kalman_init(void) {
 	// time and other constants
 	const fix16_t dt = fix16_div(fix16_one,fix16_from_float(10.0));		// SET TIME CONSTANT!!!
 	const fix16_t dt_2 = fix16_sq(dt);
-	const fix16_t dt_3 = fix16_mul(dt, dt_2);
-	const fix16_t dt_4 = fix16_sq(dt_2);
+	//const fix16_t dt_3 = fix16_mul(dt, dt_2);
+	//const fix16_t dt_4 = fix16_sq(dt_2);
 
 	m = fix16_from_float(304.0);				// SET MASS!!! [g]
 	const fix16_t init_uncert = fix16_from_float(0.1);		// SET INITIAL UNCERTEANTY!!!
-	const fix16_t sigma = fix16_from_float(20.0);			// SET SIGMA!!!
+	const fix16_t sigma = fix16_from_float(2.0);			// SET SIGMA!!!
 	fix16_t helper_const;									// varible to speed up matrix assignment
 
 	// init output struct
@@ -281,43 +281,9 @@ void kalman_init(void) {
 	// get square contol input covariance matrix from struct
 	mf16 *Q = kalman_get_input_covariance(&k_pva);
 
-	helper_const = fix16_div(fix16_mul(dt_4, sigma), fix16_from_float(4));
-	matrix_set(Q, 0, 0, helper_const);
-	matrix_set(Q, 1, 1, helper_const);
-	matrix_set(Q, 2, 2, helper_const);
-
-	helper_const = fix16_div(fix16_mul(dt_3, sigma), fix16_from_float(2));
-	matrix_set(Q, 0, 3, helper_const);
-	matrix_set(Q, 1, 4, helper_const);
-	matrix_set(Q, 2, 5, helper_const);
-	matrix_set(Q, 3, 0, helper_const);
-	matrix_set(Q, 4, 1, helper_const);
-	matrix_set(Q, 5, 2, helper_const);
-
-	helper_const = fix16_div(fix16_mul(dt_2, sigma), fix16_from_float(2));
-	matrix_set(Q, 0, 6, helper_const);
-	matrix_set(Q, 1, 7, helper_const);
-	matrix_set(Q, 2, 8, helper_const);
-	matrix_set(Q, 6, 0, helper_const);
-	matrix_set(Q, 7, 1, helper_const);
-	matrix_set(Q, 8, 2, helper_const);
-
-	helper_const = fix16_mul(dt_2, sigma);
-	matrix_set(Q, 3, 3, helper_const);
-	matrix_set(Q, 4, 4, helper_const);
-	matrix_set(Q, 5, 5, helper_const);
-
-	helper_const = fix16_mul(dt, sigma);
-	matrix_set(Q, 3, 6, helper_const);
-	matrix_set(Q, 4, 7, helper_const);
-	matrix_set(Q, 5, 8, helper_const);
-	matrix_set(Q, 6, 3, helper_const);
-	matrix_set(Q, 7, 4, helper_const);
-	matrix_set(Q, 8, 5, helper_const);
-
-	matrix_set(Q, 6, 6, sigma);
-	matrix_set(Q, 7, 7, sigma);
-	matrix_set(Q, 8, 8, sigma);
+	matrix_set(Q, 0, 0, sigma);
+	matrix_set(Q, 1, 1, sigma);
+	matrix_set(Q, 2, 2, sigma);
 
 	// get observation model matrix from struct
 	mf16 *H = kalman_get_observation_transformation(&k_pva_m);
