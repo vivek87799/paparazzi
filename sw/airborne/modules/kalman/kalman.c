@@ -17,7 +17,7 @@ int32_t dt_last_measure;
 struct state_vector_kalman kalman_sv_pva;
 
 #define G	9.81
-#define PI 3.14159265359
+#define PI  3.14159265359
 
 // activate LUT for trigonometric functions
 #define FIXMATH_SIN_LUT
@@ -41,6 +41,8 @@ kalman16_observation_t k_pva_m;
 
 #define matrix_set(matrix, row, column, value) \
     matrix->data[row][column] = value
+
+fix16_t m;
 
 // Error if fixmatrix library is not configured correctly (fixmatrix.h FIXMATRIX_MAX_SIZE)
 #ifndef FIXMATRIX_MAX_SIZE
@@ -106,9 +108,9 @@ void update_u(void) {
 
 	fix16_t thrust = fix16_from_float(throttle);
 
-	// Conversionsfunction from Christoph: thrust[g] = 0,01514x^2+0,65268x [% --> gramm]
-	fix16_t thrust_converted = fix16_add(fix16_mul(fix16_from_float(0.01514), fix16_mul(thrust, thrust)),
-		fix16_mul(fix16_from_float(0.65268), thrust));
+	// Conversionsfunction from Christoph: thrust[g] = 0,01514x^2+0,65268x [% --> gramm] corresponding to 4 motors
+	fix16_t thrust_converted = fix16_mul(fix16_add(fix16_mul(fix16_from_float(0.01514), fix16_mul(thrust, thrust)),
+		fix16_mul(fix16_from_float(0.65268), thrust)), fix16_from_float(4.0));
 	thrust_converted = fix16_mul(thrust_converted, fix16_from_float(G));
 
 	// update input vector
@@ -116,7 +118,10 @@ void update_u(void) {
 		fix16_mul(theta_cos, alpha_sin)), thrust_converted);	// Thrust in X-Direction
     u->data[1][0] = fix16_mul(fix16_sub(fix16_mul(theta_sin, fix16_mul(beta_sin, alpha_cos)), 
 		fix16_mul(theta_cos, alpha_sin)), thrust_converted);	// Thrust in Y-Direction
-    u->data[2][0] = fix16_mul(fix16_mul(beta_cos, alpha_cos), fix16_sub(thrust_converted, fix16_mul(m, G)));	// Thrust in Z-Direction
+    u->data[2][0] = fix16_sub(fix16_mul(fix16_mul(beta_cos, alpha_cos), thrust_converted), fix16_mul(m, G));	// Thrust in Z-Direction
+	if (u->data[2][0]<(fix16_from_float(0.0))) {
+		u->data[2][0] = fix16_from_float(0.0);
+	}
 }
 
 // update observation vector
@@ -143,7 +148,7 @@ void kalman_init(void) {
 	const fix16_t dt_2 = fix16_sq(dt);
 	const fix16_t dt_3 = fix16_mul(dt, dt_2);
 	const fix16_t dt_4 = fix16_sq(dt_2);
-	const fix16_t m = fix16_from_float(290);				// SET MASS!!! [g]
+	m = fix16_from_float(290);				// SET MASS!!! [g]
 	const fix16_t init_uncert = fix16_from_float(1.0);		// SET INITIAL UNCERTEANTY!!!
 	const fix16_t sigma = fix16_from_float(1.0);			// SET SIGMA!!!
 	fix16_t helper_const;									// varible to speed up matrix assignment
