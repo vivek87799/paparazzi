@@ -18,7 +18,6 @@ int32_t dt_last_measure;
 uint32_t last_time;
 struct state_vector_kalman kalman_sv_pva;
 
-#define G	9.81
 #define PI  3.14159265359
 
 // activate LUT for trigonometric functions
@@ -112,17 +111,14 @@ void update_u(void) {
 	// Conversionsfunction from Christoph: thrust[g] = 0,01514x^2+0,65268x [% --> gramm] corresponding to 4 motors
 	fix16_t thrust_converted = fix16_mul(fix16_add(fix16_mul(fix16_from_float(0.01514), fix16_mul(thrust, thrust)),
 		fix16_mul(fix16_from_float(0.65268), thrust)), fix16_from_float(4.0));
-	thrust_converted = fix16_mul(thrust_converted, fix16_from_float(G));
+	thrust_converted = fix16_mul(thrust_converted, fix16_from_float(9.81));
 
 	// update input vector
 	u->data[0][0] = fix16_mul(fix16_add(fix16_mul(theta_cos, fix16_mul(beta_sin, alpha_cos)), 
 		fix16_mul(theta_cos, alpha_sin)), thrust_converted);	// Thrust in X-Direction
     u->data[1][0] = fix16_mul(fix16_sub(fix16_mul(theta_sin, fix16_mul(beta_sin, alpha_cos)), 
 		fix16_mul(theta_cos, alpha_sin)), thrust_converted);	// Thrust in Y-Direction
-    u->data[2][0] = fix16_sub(fix16_mul(fix16_mul(beta_cos, alpha_cos), thrust_converted), fix16_mul(m, G));	// Thrust in Z-Direction
-	if (u->data[2][0]<(fix16_from_float(0.0))) {
-		u->data[2][0] = fix16_from_float(0.0);
-	}
+    u->data[2][0] = fix16_sub(fix16_mul(fix16_mul(beta_cos, alpha_cos), thrust_converted), fix16_mul(m, fix16_from_float(9.81)));	// Thrust in Z-Direction
 }
 
 // update observation vector
@@ -200,7 +196,7 @@ void kalman_init(void) {
 	const fix16_t dt_4 = fix16_sq(dt_2);
 	m = fix16_from_float(304);				// SET MASS!!! [g]
 	const fix16_t init_uncert = fix16_from_float(0.1);		// SET INITIAL UNCERTEANTY!!!
-	const fix16_t sigma = fix16_from_float(0.1);			// SET SIGMA!!!
+	const fix16_t sigma = fix16_from_float(20.0);			// SET SIGMA!!!
 	fix16_t helper_const;									// varible to speed up matrix assignment
 	last_time = 0;
 
@@ -778,8 +774,8 @@ extern void predict(void) {
 
 // correction step
 extern void correct(void) {
-	update_z();
-	kalman_correct(&k_pva, &k_pva_m);
+	//update_z();
+	//kalman_correct(&k_pva, &k_pva_m);
 	update_output();
 }
 
