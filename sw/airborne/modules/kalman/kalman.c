@@ -181,9 +181,9 @@ void update_z(void) {
 	fix16_t diff = fix16_div(fix16_from_float(diff_float), fix16_from_float(1000.0));
 
 	// Euler-Angles
-	fix16_t alpha = finken_sensor_attitude.phi * (1<<(16-INT32_ANGLE_FRAC));
-	fix16_t beta = finken_sensor_attitude.theta * (1<<(16-INT32_ANGLE_FRAC));
-	//fix16_t theta = finken_sensor_attitude.psi * (1<<(16-INT32_ANGLE_FRAC));
+	fix16_t alpha = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.phi));
+	fix16_t beta = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.theta));
+	//fix16_t theta = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.psi));
 	fix16_t theta = 0;
 
 	// Trigonometric variables to reduce future computation
@@ -214,9 +214,9 @@ void update_z(void) {
 	fix16_t R33 = fix16_mul(beta_cos, alpha_cos);
 
 	// get data of flow sensor
-	fix16_t velocity_x = finken_sensor_model.velocity.x / (1<<(INT32_SPEED_FRAC-16));
-	fix16_t velocity_y = finken_sensor_model.velocity.y / (1<<(INT32_SPEED_FRAC-16));
-	fix16_t position_z = finken_sensor_model.pos.z * (1<<(16-INT32_POS_FRAC));
+	fix16_t velocity_x = fix16_from_float(SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x));
+	fix16_t velocity_y = fix16_from_float(SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y));
+	fix16_t position_z = fix16_from_float(POS_FLOAT_OF_BFP(finken_sensor_model.pos.z));
 
 	// scaling because of flow sensor (16/4.6)
 	//velocity_x = fix16_mul(velocity_x, fix16_from_float(3.47826087));
@@ -237,9 +237,9 @@ void update_z(void) {
 		fix16_from_float(2.0)), diff);
 
 	// get accelerometer data
-	fix16_t acceleration_x = finken_sensor_model.acceleration.x * (1<<(16-INT32_ACCEL_FRAC));
-	fix16_t acceleration_y = finken_sensor_model.acceleration.y * (1<<(16-INT32_ACCEL_FRAC));
-	fix16_t acceleration_z = finken_sensor_model.acceleration.z * (1<<(16-INT32_ACCEL_FRAC));
+	fix16_t acceleration_x = fix16_from_float(ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.x));
+	fix16_t acceleration_y = fix16_from_float(ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.y));
+	fix16_t acceleration_z = fix16_from_float(ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.z));
 
  	last_pos.x += position_x;
  	last_pos.y += position_y;
@@ -365,42 +365,26 @@ void kalman_init(void) {
 	mf16 *H = kalman_get_observation_transformation(&k_pva_m);
 
 	matrix_set(H, 0, 0, fix16_one);
-
-	matrix_set(H, 1, 1, fix16_one);
-	
+	matrix_set(H, 1, 1, fix16_one);	
 	matrix_set(H, 2, 2, fix16_one);
-
 	matrix_set(H, 3, 3, fix16_one);
-
 	matrix_set(H, 4, 4, fix16_one);
-
 	matrix_set(H, 5, 5, fix16_one);
-
 	matrix_set(H, 6, 6, fix16_one);
-
 	matrix_set(H, 7, 7, fix16_one);
-
 	matrix_set(H, 8, 8, fix16_one);
 
 	// get square observation covariance matrix from struct
 	mf16 *R = kalman_get_observation_process_noise(&k_pva_m);		// SET OBSERVATION ERROR
 
 	matrix_set(R, 0, 0, fix16_from_float(0.1));
-
-	matrix_set(R, 1, 1, fix16_from_float(0.1));
-	
+	matrix_set(R, 1, 1, fix16_from_float(0.1));	
 	matrix_set(R, 2, 2, fix16_from_float(0.01));
-
 	matrix_set(R, 3, 3, fix16_from_float(0.2));
-
 	matrix_set(R, 4, 4, fix16_from_float(0.2));
-
 	matrix_set(R, 5, 5, fix16_from_float(0.1));
-
 	matrix_set(R, 6, 6, fix16_from_float(0.2));
-
 	matrix_set(R, 7, 7, fix16_from_float(0.2));
-
 	matrix_set(R, 8, 8, fix16_from_float(0.2));
 
 	// init timestamp
@@ -421,12 +405,12 @@ extern void update_output(void) {
 	float z, z_v;
 
 	// convert position and velocity in z direction to float
-	z= POS_FLOAT_OF_BFP(((x->data[2][0]) / (1<<(16-INT32_POS_FRAC))));
-	z_v = SPEED_FLOAT_OF_BFP(((x->data[5][0]) * (1<<(INT32_SPEED_FRAC-16))));
+	z= fix16_to_float(x->data[2][0]);
+	z_v = fix16_to_float(x->data[5][0]);
 
 	// positions (converted back to paparazzi format)
-	kalman_sv_pva.pos_x = (x->data[0][0]) / (1<<(16-INT32_POS_FRAC));
-	kalman_sv_pva.pos_y = (x->data[1][0]) / (1<<(16-INT32_POS_FRAC));
+	kalman_sv_pva.pos_x = POS_BFP_OF_REAL(fix16_to_float(x->data[0][0]));
+	kalman_sv_pva.pos_y = POS_BFP_OF_REAL(fix16_to_float(x->data[1][0]));
 
 	// do not fall below starting position
 	if (z > 0.0) {
@@ -435,12 +419,12 @@ extern void update_output(void) {
 		on_ground = 1;
 	}
 	else {
-		kalman_sv_pva.pos_z = (x->data[2][0]) / (1<<(16-INT32_POS_FRAC));
+		kalman_sv_pva.pos_z = POS_BFP_OF_REAL(fix16_to_float(x->data[2][0]));
 	}
 
 	// velocity (converted back to paparazzi format)
-	kalman_sv_pva.vel_x = (x->data[3][0]) * (1<<(INT32_SPEED_FRAC-16));
-	kalman_sv_pva.vel_y = (x->data[4][0]) * (1<<(INT32_SPEED_FRAC-16));
+	kalman_sv_pva.vel_x = SPEED_BFP_OF_REAL(fix16_to_float(x->data[3][0]));
+	kalman_sv_pva.vel_y = SPEED_BFP_OF_REAL(fix16_to_float(x->data[4][0]));
 
 	// if already on ground set z-velocity 0:
 	if ((on_ground == 1) && (z_v > 0.0)) {
@@ -448,13 +432,13 @@ extern void update_output(void) {
 		x->data[5][0] = 0;
 	}
 	else {
-		kalman_sv_pva.vel_z = (x->data[5][0]) * (1<<(INT32_SPEED_FRAC-16));
+		kalman_sv_pva.vel_z = SPEED_BFP_OF_REAL(fix16_to_float(x->data[5][0]));
 	}
 
 	// acceleration (converted back to paparazzi format)
-	kalman_sv_pva.acc_x = (x->data[6][0]) / (1<<(16-INT32_ACCEL_FRAC));
-	kalman_sv_pva.acc_y = (x->data[7][0]) / (1<<(16-INT32_ACCEL_FRAC));
-	kalman_sv_pva.acc_z = (x->data[8][0]) / (1<<(16-INT32_ACCEL_FRAC));
+	kalman_sv_pva.acc_x = ACCEL_BFP_OF_REAL(fix16_to_float(x->data[6][0]));
+	kalman_sv_pva.acc_y = ACCEL_BFP_OF_REAL(fix16_to_float(x->data[7][0]));
+	kalman_sv_pva.acc_z = ACCEL_BFP_OF_REAL(fix16_to_float(x->data[8][0]));
 }
 
 // prediction step (periodic function call by paparazzi)
@@ -466,9 +450,9 @@ extern void predict(void) {
 
 // correction step (periodic function call by paparazzi)
 extern void correct(void) {
-	//update_z();
-	//kalman_correct(&k_pva, &k_pva_m);
-	//update_output();
+	update_z();
+	kalman_correct(&k_pva, &k_pva_m);
+	update_output();
 }
 
 // telemetry
