@@ -17,8 +17,9 @@
 // last measurement time to compute time difference
 uint32_t last_time;
 
-// last measured vertical positions
-struct last_measurement_vertical_positions last_pos;
+float q1;
+float q2;
+float q3;
 
 // struct to communicate results to other modules
 struct state_vector_kalman kalman_sv_pva;
@@ -75,12 +76,6 @@ void kalman_sv_init(void) {
 
 	// telemetry
 	register_periodic_telemetry(DefaultPeriodic, "KALMAN", send_kalman_telemetry);
-}
-
-// init vertical positions
-void meas_pos_init(void) {
-	last_pos.x = 0;
-	last_pos.y = 0;
 }
 
 // update input vector
@@ -222,15 +217,15 @@ void update_z(void) {
 	//velocity_x = fix16_mul(velocity_x, fix16_from_float(3.47826087));
 	//velocity_y = fix16_mul(velocity_y, fix16_from_float(3.47826087));
 
-	// compute current velocity in x and y direction and hight
 	position_z = fix16_mul(R33, position_z);
+	fix16_t velocity_z = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);
+
+	// compute current velocity in x and y direction
 	helper_const = velocity_x;
 	velocity_x = fix16_add(fix16_mul(R11, velocity_x), fix16_mul(R12, velocity_y));
 	velocity_y = fix16_add(fix16_mul(R21, helper_const), fix16_mul(R22, velocity_y));
 
 	// indirect computation of position difference to last time in x and y 
-	// and velocity in z direction
-	fix16_t velocity_z = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);
 	fix16_t position_x = fix16_mul(fix16_div(fix16_add(velocity_x, z->data[3][0]), 
 		fix16_from_float(2.0)), diff);
 	fix16_t position_y = fix16_mul(fix16_div(fix16_add(velocity_y, z->data[4][0]), 
@@ -241,22 +236,23 @@ void update_z(void) {
 	fix16_t acceleration_y = fix16_from_float(ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.y));
 	fix16_t acceleration_z = fix16_from_float(ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.z));
 
- 	last_pos.x += position_x;
- 	last_pos.y += position_y;
-
 	// update measurement vector vector
-	z->data[0][0] = last_pos.x;	  	// pos_x
-	z->data[1][0] = last_pos.y;		// pos_y
-	z->data[2][0] = -position_z;	// pos_z
+	z->data[0][0] = fix16_add(z->data[0][0], position_x);	  	// pos_x
+	z->data[1][0] = fix16_add(z->data[1][0], position_y);		// pos_y
+	z->data[2][0] = fix16_mul(position_z, fix16_from_float(-1.0));			// pos_z
 	z->data[3][0] = velocity_x;		// vel_x
 	z->data[4][0] = velocity_y;		// vel_y
-	z->data[5][0] = -velocity_z;	// vel_z
+	z->data[5][0] = fix16_mul(velocity_z, fix16_from_float(-1.0));			// vel_z
 	z->data[6][0] = fix16_add(fix16_add(fix16_mul(R11, acceleration_x),
 		fix16_mul(R12, acceleration_y)), fix16_mul(R13, acceleration_z));	// acc_x
 	z->data[7][0] = fix16_add(fix16_add(fix16_mul(R21, acceleration_x), 
 		fix16_mul(R22, acceleration_y)), fix16_mul(R23, acceleration_z));	// acc_y
 	z->data[8][0] = fix16_add(fix16_add(fix16_mul(R31, acceleration_x), 
 		fix16_mul(R32, acceleration_y)), fix16_mul(R33, acceleration_z));	// acc_z
+
+	q1 = fix16_to_float(z->data[0][0]);
+	q2 = fix16_to_float(z->data[1][0]);
+	q3 = fix16_to_float(z->data[2][0]);
 
 	// update timestamp
 	last_time = now;
@@ -270,17 +266,14 @@ void kalman_init(void) {
 
 	// initialisation constants
 	m = fix16_from_float(304.0);							// SET MASS!!! [g]
-	const fix16_t init_uncert_1 = fix16_from_float(1.0);	// SET INITIAL UNCERTEANTY!!!
-	const fix16_t init_uncert_2 = fix16_from_float(0.3);	// SET INITIAL UNCERTEANTY!!!
-	const fix16_t init_uncert_3 = fix16_from_float(0.5);	// SET INITIAL UNCERTEANTY!!!
+	const fix16_t init_uncert_1 = fix16_from_float(0.1);	// SET INITIAL UNCERTEANTY!!!
+	const fix16_t init_uncert_2 = fix16_from_float(0.1);	// SET INITIAL UNCERTEANTY!!!
+	const fix16_t init_uncert_3 = fix16_from_float(0.01);	// SET INITIAL UNCERTEANTY!!!
 	const fix16_t sigma = fix16_from_float(2.0);			// SET SIGMA!!!
 	fix16_t helper_const;									// varible to speed up matrix assignment
 	//const fix16_t c = fix16_from_float(0.95);				// c = 0.95 --> ~ as it would be a plane surface
 	//const fix16_t A1 = fix16_from_float(0.03947);			// A_x,y = 27.5*27.5 and 12*27,5 rotated with 5 degrees ~ 0.03947
 	//const fix16_t A2 = fix16_from_float(0.075625);		// A_z = 27.5*27.5 cm --> maximal distance between endpoints of the rotors
-
-	// init vertical positions
-	meas_pos_init();
 	
 	// init output struct
 	kalman_sv_init();
@@ -380,12 +373,12 @@ void kalman_init(void) {
 	matrix_set(R, 0, 0, fix16_from_float(0.1));
 	matrix_set(R, 1, 1, fix16_from_float(0.1));	
 	matrix_set(R, 2, 2, fix16_from_float(0.01));
-	matrix_set(R, 3, 3, fix16_from_float(0.2));
-	matrix_set(R, 4, 4, fix16_from_float(0.2));
+	matrix_set(R, 3, 3, fix16_from_float(0.5));
+	matrix_set(R, 4, 4, fix16_from_float(0.5));
 	matrix_set(R, 5, 5, fix16_from_float(0.1));
-	matrix_set(R, 6, 6, fix16_from_float(0.2));
-	matrix_set(R, 7, 7, fix16_from_float(0.2));
-	matrix_set(R, 8, 8, fix16_from_float(0.2));
+	matrix_set(R, 6, 6, fix16_from_float(0.5));
+	matrix_set(R, 7, 7, fix16_from_float(0.5));
+	matrix_set(R, 8, 8, fix16_from_float(0.5));
 
 	// init timestamp
 	last_time = get_sys_time_msec();
@@ -480,8 +473,8 @@ void send_kalman_telemetry(struct transport_tx *trans, struct link_device* link)
 		&vel_x,
 		&vel_y,
 		&vel_z,
-		&acc_x,
-		&acc_y,
-		&acc_z
+		&q1,
+		&q2,
+		&q3
 	);
 }

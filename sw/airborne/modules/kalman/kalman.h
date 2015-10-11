@@ -26,12 +26,6 @@ struct state_vector_kalman
 	int32_t acc_z;
 }; 
 
-struct last_measurement_vertical_positions
-{
-	fix16_t x;
-	fix16_t y;
-}; 
-
 extern void update_u(void);
 extern void update_z(void);
 extern void kalman_init(void);
