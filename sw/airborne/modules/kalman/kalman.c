@@ -17,10 +17,6 @@
 // last measurement time to compute time difference
 uint32_t last_time;
 
-float q1;
-float q2;
-float q3;
-
 // struct to communicate results to other modules
 struct state_vector_kalman kalman_sv_pva;
 
@@ -47,7 +43,7 @@ kalman16_observation_t k_pva_m;
 #define K_NUM_MEAS 9
 
 #define matrix_set(matrix, row, column, value) \
-    matrix->data[row][column] = value
+	matrix->data[row][column] = value
 
 // global variable for mass
 fix16_t m;
@@ -95,7 +91,11 @@ void update_u(void) {
 /*	float alpha = (finken_actuators_model.roll / 180.0) * PI;
 	float beta = (finken_actuators_model.pitch / 180.0) * PI;
 	// float theta = finken_actuators_model.yaw; // [rad/s] winkelgeschwindigkeit
+
+	// theta is permanently set to 0
 	float theta = 0.0;
+
+	// keep compiler happy
 	float throttle;
 
 	// waiting for heigth controller
@@ -118,6 +118,8 @@ void update_u(void) {
 	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (12236*180) * 20 * PI;
 	float beta = ((float) radio_control.values[RADIO_PITCH]) / (12236*180) * 20 * PI;
 	//float theta = ((float) radio_control.values[RADIO_YAW]) / (12236*180) * 90 * PI;
+
+	// theta is permanently set to 0
 	float theta = 0.0;
 
 	// correction to 0 with 1318
@@ -179,6 +181,8 @@ void update_z(void) {
 	fix16_t alpha = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.phi));
 	fix16_t beta = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.theta));
 	//fix16_t theta = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.psi));
+
+	// theta is permanently set to 0
 	fix16_t theta = 0;
 
 	// Trigonometric variables to reduce future computation
@@ -217,6 +221,7 @@ void update_z(void) {
 	//velocity_x = fix16_mul(velocity_x, fix16_from_float(3.47826087));
 	//velocity_y = fix16_mul(velocity_y, fix16_from_float(3.47826087));
 
+	// compute system variables from flow sensor in z direction
 	position_z = fix16_mul(R33, position_z);
 	fix16_t velocity_z = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);
 
@@ -250,10 +255,6 @@ void update_z(void) {
 	z->data[8][0] = fix16_add(fix16_add(fix16_mul(R31, acceleration_x), 
 		fix16_mul(R32, acceleration_y)), fix16_mul(R33, acceleration_z));	// acc_z
 
-	q1 = fix16_to_float(z->data[0][0]);
-	q2 = fix16_to_float(z->data[1][0]);
-	q3 = fix16_to_float(z->data[2][0]);
-
 	// update timestamp
 	last_time = now;
 }
@@ -261,19 +262,25 @@ void update_z(void) {
 // initialize kalman filter (initializer function for paparazzi)
 void kalman_init(void) {
 	// time and other constants
-	const fix16_t dt = fix16_div(fix16_one,fix16_from_float(15.0));		// SET TIME CONSTANT!!!
+	const fix16_t dt = fix16_div(fix16_one,fix16_from_float(15.0));		// time constant (paparazzi call frequency)
 	const fix16_t dt_2 = fix16_sq(dt);
 
 	// initialisation constants
-	m = fix16_from_float(304.0);							// SET MASS!!! [g]
-	const fix16_t init_uncert_1 = fix16_from_float(0.1);	// SET INITIAL UNCERTEANTY!!!
-	const fix16_t init_uncert_2 = fix16_from_float(0.1);	// SET INITIAL UNCERTEANTY!!!
-	const fix16_t init_uncert_3 = fix16_from_float(0.01);	// SET INITIAL UNCERTEANTY!!!
-	const fix16_t sigma = fix16_from_float(2.0);			// SET SIGMA!!!
+	m = fix16_from_float(304.0);							// set mass [g]
+	const fix16_t init_uncert_1 = fix16_from_float(0.1);	// set initial uncerteanty 1
+	const fix16_t init_uncert_2 = fix16_from_float(0.1);	// set initial uncerteanty 2
+	const fix16_t init_uncert_3 = fix16_from_float(0.01);	// set initial uncerteanty 3
+	const fix16_t sigma = fix16_from_float(2.0);			// set sigma
 	fix16_t helper_const;									// varible to speed up matrix assignment
+
+	// this constants were declared to calculate the air resistance
+	// but they were removed because of linearisation
+	// but they can be useful in the future
+	// ------------------------------------------------------------------------ 
 	//const fix16_t c = fix16_from_float(0.95);				// c = 0.95 --> ~ as it would be a plane surface
 	//const fix16_t A1 = fix16_from_float(0.03947);			// A_x,y = 27.5*27.5 and 12*27,5 rotated with 5 degrees ~ 0.03947
 	//const fix16_t A2 = fix16_from_float(0.075625);		// A_z = 27.5*27.5 cm --> maximal distance between endpoints of the rotors
+	// ------------------------------------------------------------------------
 	
 	// init output struct
 	kalman_sv_init();
@@ -284,11 +291,13 @@ void kalman_init(void) {
 	// init observation
 	kalman_observation_initialize(&k_pva_m, K_NUM_S, K_NUM_MEAS);
 
+	// (dt^2)/2
 	helper_const = fix16_div(dt_2, fix16_from_float(2.0));
 
 	// get system state transition model matrix from struct
 	mf16 *A = kalman_get_state_transition(&k_pva);
-
+	
+	// s_i(t) = s_i(t-1) + v_i(t-1)*dt + a_i(t-1)*(dt^2)/2
 	matrix_set(A, 0, 0, fix16_one);
 	matrix_set(A, 0, 3, dt);
 	matrix_set(A, 0, 6, helper_const);
@@ -301,6 +310,7 @@ void kalman_init(void) {
 	matrix_set(A, 2, 5, dt);
 	matrix_set(A, 2, 8, helper_const);
 
+	// v_i(t) = v_i(t-1) + a_i(t-1)*dt
 	matrix_set(A, 3, 3, fix16_one);
 	matrix_set(A, 3, 6, dt);
 
@@ -310,23 +320,31 @@ void kalman_init(void) {
 	matrix_set(A, 5, 5, fix16_one);
 	matrix_set(A, 5, 8, dt);
 
-	// linear approximation of air resustance
+	// this linearistaion was not working (can be useful in the future)
+	// ------------------------------------------------------------------------
+	// linear approximation of air resistance
 	// F_r = 0.5*rho*c*A*v^2
 	// a_r' = (rho/m)*c*A*v
 	// air density = 1.225 kg/m^3
-	//helper_const = fix16_mul(fix16_div(fix16_from_float(1225.0), m), fix16_mul(c, A1));
+	// helper_const = fix16_mul(fix16_div(fix16_from_float(1225.0), m), fix16_mul(c, A1));
+	// ------------------------------------------------------------------------
 
 	// air resistance
-	matrix_set(A, 6, 3, -fix16_from_float(1.614));
+	// linearised using 0 and maximal allowed speed to a given mass
+	// a_i(t) = -c*v(t-1) + [1/m*F_i(t-1)]
+	// second part is in the B matrix
+	matrix_set(A, 6, 3, fix16_from_float(-1.614));
 
-	matrix_set(A, 7, 4, -fix16_from_float(1.614));
+	matrix_set(A, 7, 4, fix16_from_float(-1.614));
 
-	matrix_set(A, 8, 5, -fix16_from_float(1.614));
+	matrix_set(A, 8, 5, fix16_from_float(-1.614));
 
 
 	// get control input model matrix from struct
 	mf16 *B = kalman_get_input_transition(&k_pva);
 
+	// a_i(t) = [-c*v(t-1)] + 1/m*F_i(t-1)
+	// first part is in the A matrix
 	helper_const = fix16_div(fix16_one, m);
 	matrix_set(B, 6, 0, helper_const);
 	matrix_set(B, 7, 1, helper_const);
@@ -335,6 +353,7 @@ void kalman_init(void) {
 	// get square system state covariance matrix from struct
 	mf16 *P = kalman_get_system_covariance(&k_pva);
 
+	// prediction covarience
 	matrix_set(P, 0, 0, init_uncert_1);
 	matrix_set(P, 1, 1, init_uncert_1);
 	matrix_set(P, 2, 2, init_uncert_1);
@@ -347,9 +366,12 @@ void kalman_init(void) {
 	matrix_set(P, 7, 7, init_uncert_3);
 	matrix_set(P, 8, 8, init_uncert_3);
 
-	// get square contol input covariance matrix from struct
+	// get square control input covariance matrix from struct
 	mf16 *Q = kalman_get_input_covariance(&k_pva);
 
+	// Q is defined in most of the literature as Q = B(B^T)S
+	// where S contains the noise
+	// here Q = S
 	matrix_set(Q, 0, 0, sigma);
 	matrix_set(Q, 1, 1, sigma);
 	matrix_set(Q, 2, 2, sigma);
@@ -357,6 +379,7 @@ void kalman_init(void) {
 	// get observation model matrix from struct
 	mf16 *H = kalman_get_observation_transformation(&k_pva_m);
 
+	// H = I, because we measure everything independently 
 	matrix_set(H, 0, 0, fix16_one);
 	matrix_set(H, 1, 1, fix16_one);	
 	matrix_set(H, 2, 2, fix16_one);
@@ -368,8 +391,9 @@ void kalman_init(void) {
 	matrix_set(H, 8, 8, fix16_one);
 
 	// get square observation covariance matrix from struct
-	mf16 *R = kalman_get_observation_process_noise(&k_pva_m);		// SET OBSERVATION ERROR
+	mf16 *R = kalman_get_observation_process_noise(&k_pva_m);		// set observation error
 
+	// sensor uncertainty in the diagonal of the matrix
 	matrix_set(R, 0, 0, fix16_from_float(0.1));
 	matrix_set(R, 1, 1, fix16_from_float(0.1));	
 	matrix_set(R, 2, 2, fix16_from_float(0.01));
@@ -389,6 +413,7 @@ void kalman_init(void) {
 	update_output();
 }
 
+// update output structure
 extern void update_output(void) {
 	// get state vector from struct
 	mf16 *x = kalman_get_state_vector(&k_pva);
@@ -473,8 +498,8 @@ void send_kalman_telemetry(struct transport_tx *trans, struct link_device* link)
 		&vel_x,
 		&vel_y,
 		&vel_z,
-		&q1,
-		&q2,
-		&q3
+		&acc_x,
+		&acc_y,
+		&acc_z
 	);
 }
