@@ -5,15 +5,15 @@
 #define Tv FINKEN_WALL_AVOID_CONTROL_HOLD_TIME
 #define Kp FINKEN_WALL_AVOID_CONTROL_GAIN
 
-#define a0 -0.1031288//(T-2.0f*T1)/(T+2.0f*T1)
-#define b0 51.9420027//Kp*(T-2.0f*Tv)/(T+2.0f*T1)
-#define b1 -50.675209//Kp*(T+2.0f*Tv)/(T+2.0f*T1)
+#define a0 /*-0.1031288*/(T-2.0f*T1)/(T+2.0f*T1)
+#define b0 /*51.9420027*/Kp*(T-2.0f*Tv)/(T+2.0f*T1)
+#define b1 /*-50.675209*/Kp*(T+2.0f*Tv)/(T+2.0f*T1)
 
-static const float maxControlRoll  = 20.0f;
-static const float maxControlPitch = 20.0f;
-static const float guardDist       =  0.7f;
-static const float goalDist        =  1.3f;
-static const float freeDist        =  0.9f*1.3f;
+static const float maxControlRoll  = 10.0f;
+static const float maxControlPitch = 10.0f;
+static const float guardDist       =  1.0f;
+static const float goalDist        =  1.0f;
+static const float freeDist        =  0.95f*1.0f;
 static const float maxDist         =  1.5f;
 
 float pitchError_k1, pitch_k1, rollError_k1, roll_k1;
@@ -43,7 +43,7 @@ static float rollWallAvoid(float rollIn, float distXLeft, float distXRight) {
   if (distXRight < maxDist && rollIn < 0)
 		rollIn*=(distXRight-guardDist)/(maxDist-guardDist);
 	rollInDamped = rollIn;
-	return newRoll+rollIn;
+	return newRoll + rollIn;
 }
 
 static float pitchControl(float pitchError) {
@@ -70,7 +70,7 @@ static float pitchWallAvoid(float pitchIn, float distXFront, float distXBack) {
   if (pitchIn < 0)
 		pitchIn*=(distXBack-guardDist)/(maxDist-guardDist);
 	pitchInDamped = pitchIn;
-	return newPitch+pitchIn;
+	return newPitch + pitchIn;
 }
 
 void finken_wall_avoid_init() {
@@ -84,8 +84,8 @@ void finken_wall_avoid_init() {
 
 void finken_wall_avoid_periodic() {
 
-	finken_actuators_set_point.pitch = pitchWallAvoid(finken_system_set_point.pitch, finken_sensor_model.distance_d_front/100.0, finken_sensor_model.distance_d_back/100.0);
-	finken_actuators_set_point.roll = rollWallAvoid(finken_system_set_point.roll, finken_sensor_model.distance_d_left/100.0, finken_sensor_model.distance_d_right/100.0);
+	finken_actuators_set_point.pitch = pitchWallAvoid(finken_system_set_point.pitch, finken_sensor_model.distance_d_back/100.0, finken_sensor_model.distance_d_front/100.0);
+	finken_actuators_set_point.roll = rollWallAvoid(finken_system_set_point.roll, finken_sensor_model.distance_d_right/100.0, finken_sensor_model.distance_d_left/100.0);
 
 }
 
