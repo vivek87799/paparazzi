@@ -13,16 +13,21 @@
   <periodic fun="finken_wall_avoid_periodic()" freq="5" />
   <makefile>
     <file name="finken_wall_avoid.c" />
-		<!-- original
+		<!-- original 
 		<define name="FINKEN_WALL_AVOID_UPDATE_FREQ"         value="5.0" />
 		<define name="FINKEN_WALL_AVOID_CONTROL_HOLD_TIME"   value="5.7864" />
 		<define name="FINKEN_WALL_AVOID_CONTROL_GAIN"        value="1.4" />
 		<define name="FINKEN_WALL_AVOID_CONTROL_DELAY_TIME"  value="0.0879"/>-->
-		<!-- adapted to noisy sensors -->
+		<!-- phase margin:60degree; t_max: 2.0s 
 		<define name="FINKEN_WALL_AVOID_UPDATE_FREQ"         value="5.0" />
-		<define name="FINKEN_WALL_AVOID_CONTROL_HOLD_TIME"   value="4.618" />
-		<define name="FINKEN_WALL_AVOID_CONTROL_GAIN"        value="1.183" />
-		<define name="FINKEN_WALL_AVOID_CONTROL_DELAY_TIME"  value="0.247"/>
+		<define name="FINKEN_WALL_AVOID_CONTROL_HOLD_TIME"   value="3.34" />
+		<define name="FINKEN_WALL_AVOID_CONTROL_GAIN"        value="2.45" />
+		<define name="FINKEN_WALL_AVOID_CONTROL_DELAY_TIME"  value="0.152"/>-->
+		<!-- phase margin:40degree; t_max: 2.0s -->
+		<define name="FINKEN_WALL_AVOID_UPDATE_FREQ"         value="5.0" />
+		<define name="FINKEN_WALL_AVOID_CONTROL_HOLD_TIME"   value="2.29" />
+		<define name="FINKEN_WALL_AVOID_CONTROL_GAIN"        value="3.65" />
+		<define name="FINKEN_WALL_AVOID_CONTROL_DELAY_TIME"  value="0.213"/>
 	</makefile>
 
 </module>

@@ -9,12 +9,14 @@
 #define b0 /*51.9420027*/Kp*(T-2.0f*Tv)/(T+2.0f*T1)
 #define b1 /*-50.675209*/Kp*(T+2.0f*Tv)/(T+2.0f*T1)
 
-static const float maxControlRoll  = 10.0f;
-static const float maxControlPitch = 10.0f;
-static const float guardDist       =  1.0f;
-static const float goalDist        =  1.0f;
-static const float freeDist        =  0.95f*1.0f;
+static const float maxControlRoll  = 15.0f;
+static const float maxControlPitch = 15.0f;
+static const float guardDist       =  0.7f;
+static const float goalDist        =  1.2f;
+static const float freeDist        =  0.999f*1.0f;
 static const float maxDist         =  1.5f;
+static const float rollOffset      =  2.0f;
+static const float pitchOffset     =  0.0f;
 
 float pitchError_k1, pitch_k1, rollError_k1, roll_k1;
 float pitchInDamped, rollInDamped;
@@ -31,19 +33,34 @@ static float rollControl(float rollError) {
 static float rollWallAvoid(float rollIn, float distXLeft, float distXRight) {
 	distXLeft = distXLeft<maxDist?distXLeft:maxDist;
 	distXRight  = distXRight<maxDist?distXRight:maxDist;
-	float distXControlLeft = distXLeft>goalDist?freeDist:distXLeft;
-	float distXControlRight  = distXRight>goalDist?freeDist:distXRight;
-	float distXControlDiff  = 0.0f-(distXControlRight-distXControlLeft);
+	//float distXControlLeft = distXLeft>goalDist?freeDist:distXLeft;
+	//float distXControlRight  = distXRight>goalDist?freeDist:distXRight;
+	float distXControlDiff  = 0.0f;
+	//if (distXLeft<goalDist && distXRight <goalDist){
+	//	distXControlDiff  = 0.0f-(distXRight-distXLeft)/2.0;
+	//}
+	//else{
+		if (distXLeft<distXRight && distXLeft<goalDist*1.0){
+			distXControlDiff = -goalDist+distXLeft;
+		}
+		if (distXRight<distXLeft && distXRight<goalDist*1.0){
+			distXControlDiff = goalDist-distXRight;
+		}
+	//}
 	float newRoll = rollControl(distXControlDiff);
 	/*rollIn = (rollIn < -maxRCPitch) ? -maxRCPitch : rollIn;
 	rollIn = (rollIn > maxRCPitch)  ?  maxRCPitch : rollIn;
 	rollIn = (rollIn< deadRCPitch && rollIn > -deadRCPitch) ? 0.0f : rollIn;*/
-  if (distXLeft < maxDist && rollIn > 0)
+  	if (distXLeft < maxDist && rollIn > 0){
 		rollIn*=(distXLeft-guardDist)/(maxDist-guardDist);
-  if (distXRight < maxDist && rollIn < 0)
+		rollIn=(rollIn<0.0)?0.0:rollIn;
+	}
+	if (distXRight < maxDist && rollIn < 0){
 		rollIn*=(distXRight-guardDist)/(maxDist-guardDist);
+		rollIn=(rollIn>0.0)?0.0:rollIn;
+	}
 	rollInDamped = rollIn;
-	return newRoll + rollIn;
+	return newRoll + rollIn + rollOffset;
 }
 
 static float pitchControl(float pitchError) {
@@ -58,19 +75,35 @@ static float pitchControl(float pitchError) {
 static float pitchWallAvoid(float pitchIn, float distXFront, float distXBack) {
 	distXFront = distXFront<maxDist?distXFront:maxDist;
 	distXBack  = distXBack<maxDist?distXBack:maxDist;
-	float distXControlFront = distXFront>goalDist?freeDist:distXFront;
-	float distXControlBack  = distXBack>goalDist?freeDist:distXBack;
-	float distXControlDiff  = 0.0f-(distXControlBack-distXControlFront);
+	//float distXControlFront = distXFront>goalDist?freeDist:distXFront;
+	//float distXControlBack  = distXBack>goalDist?freeDist:distXBack;
+	//float distXControlDiff  = 0.0f-(distXControlBack-distXControlFront);
+	float distXControlDiff  = 0.0f;
+	//if (distXFront<goalDist && distXBack <goalDist){
+	//	distXControlDiff  = 0.0f-(distXBack-distXFront)/2.0;
+	//}
+	//else{
+		if (distXFront<distXBack && distXFront<goalDist*1.0){
+			distXControlDiff = -goalDist+distXFront;
+		}
+		if (distXBack<distXFront && distXBack<goalDist*1.0){
+			distXControlDiff = goalDist-distXBack;
+		}
+	//}
 	float newPitch = pitchControl(distXControlDiff);
 	/*pitchIn = (pitchIn < -maxRCPitch) ? -maxRCPitch : pitchIn;
 	pitchIn = (pitchIn > maxRCPitch)  ?  maxRCPitch : pitchIn;
 	pitchIn = (pitchIn< deadRCPitch && pitchIn > -deadRCPitch) ? 0.0f : pitchIn;*/
-  if (pitchIn > 0)
+  	if (pitchIn > 0){
 		pitchIn*=(distXFront-guardDist)/(maxDist-guardDist);
-  if (pitchIn < 0)
+		pitchIn=(pitchIn)<0.0?0.0:pitchIn;
+	}
+  	if (pitchIn < 0){
 		pitchIn*=(distXBack-guardDist)/(maxDist-guardDist);
+		pitchIn=(pitchIn>0.0)?0.0:pitchIn;
+	}
 	pitchInDamped = pitchIn;
-	return newPitch + pitchIn;
+	return newPitch + pitchIn + pitchOffset;
 }
 
 void finken_wall_avoid_init() {
