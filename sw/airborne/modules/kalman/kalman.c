@@ -88,7 +88,7 @@ void update_u(void) {
 	// ------------------------------------------------------------------------
 
 	// controll data from autopilot
-/*	float alpha = (finken_actuators_model.roll / 180.0) * PI;
+	float alpha = (finken_actuators_model.roll / 180.0) * PI;
 	float beta = (finken_actuators_model.pitch / 180.0) * PI;
 	// float theta = finken_actuators_model.yaw; // [rad/s] winkelgeschwindigkeit
 
@@ -104,7 +104,7 @@ void update_u(void) {
 	}
 	else {
 		throttle = finken_actuators_model.thrust * 100;
-	}*/
+	}
 
 	// ------------------------------------------------------------------------
 	// -------------------- end of autopilot as control unit ------------------
@@ -113,7 +113,7 @@ void update_u(void) {
 	// ------------------------------------------------------------------------
 	// ---------------- start of radio controller as control unit -------------
 	// ------------------------------------------------------------------------
-
+/*
 	// controll data from controller
 	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (12236*180) * 20 * PI;
 	float beta = ((float) radio_control.values[RADIO_PITCH]) / (12236*180) * 20 * PI;
@@ -132,7 +132,7 @@ void update_u(void) {
 	if (beta<0.017453 && beta>-0.017453) {
 		beta = 0.0;
 	}
-
+*/
 	// ------------------------------------------------------------------------
 	// ----------------- end of radio controller as control unit --------------
 	// ------------------------------------------------------------------------
@@ -267,10 +267,6 @@ void kalman_init(void) {
 
 	// initialisation constants
 	m = fix16_from_float(304.0);							// set mass [g]
-	const fix16_t init_uncert_1 = fix16_from_float(0.1);	// set initial uncerteanty 1
-	const fix16_t init_uncert_2 = fix16_from_float(0.1);	// set initial uncerteanty 2
-	const fix16_t init_uncert_3 = fix16_from_float(0.01);	// set initial uncerteanty 3
-	const fix16_t sigma = fix16_from_float(2.0);			// set sigma
 	fix16_t helper_const;									// varible to speed up matrix assignment
 
 	// this constants were declared to calculate the air resistance
@@ -293,6 +289,12 @@ void kalman_init(void) {
 
 	// (dt^2)/2
 	helper_const = fix16_div(dt_2, fix16_from_float(2.0));
+
+	// get state vector from struct
+	mf16 *x = kalman_get_state_vector(&k_pva);
+
+	// initialize acceleration in z direction
+	matrix_set(x, 8, 0, fix16_from_float(9.81));
 
 	// get system state transition model matrix from struct
 	mf16 *A = kalman_get_state_transition(&k_pva);
@@ -354,27 +356,27 @@ void kalman_init(void) {
 	mf16 *P = kalman_get_system_covariance(&k_pva);
 
 	// prediction covarience
-	matrix_set(P, 0, 0, init_uncert_1);
-	matrix_set(P, 1, 1, init_uncert_1);
-	matrix_set(P, 2, 2, init_uncert_1);
+	matrix_set(P, 0, 0, fix16_from_float(0.01));
+	matrix_set(P, 1, 1, fix16_from_float(0.01));
+	matrix_set(P, 2, 2, fix16_from_float(0.01));
 
-	matrix_set(P, 3, 3, init_uncert_2);
-	matrix_set(P, 4, 4, init_uncert_2);
-	matrix_set(P, 5, 5, init_uncert_2);
+	matrix_set(P, 3, 3, fix16_from_float(0.01));
+	matrix_set(P, 4, 4, fix16_from_float(0.01));
+	matrix_set(P, 5, 5, fix16_from_float(0.01));
 
-	matrix_set(P, 6, 6, init_uncert_3);
-	matrix_set(P, 7, 7, init_uncert_3);
-	matrix_set(P, 8, 8, init_uncert_3);
+	matrix_set(P, 6, 6, fix16_from_float(0.01));
+	matrix_set(P, 7, 7, fix16_from_float(0.01));
+	matrix_set(P, 8, 8, fix16_from_float(0.1));
 
 	// get square control input covariance matrix from struct
 	mf16 *Q = kalman_get_input_covariance(&k_pva);
 
-	// Q is defined in most of the literature as Q = B(B^T)S
+	// Q is defined in most of the literature as Q = B S (B^T)
 	// where S contains the noise
 	// here Q = S
-	matrix_set(Q, 0, 0, sigma);
-	matrix_set(Q, 1, 1, sigma);
-	matrix_set(Q, 2, 2, sigma);
+	matrix_set(Q, 0, 0, fix16_from_float(0.1));
+	matrix_set(Q, 1, 1, fix16_from_float(0.05));
+	matrix_set(Q, 2, 2, fix16_from_float(1.0));
 
 	// get observation model matrix from struct
 	mf16 *H = kalman_get_observation_transformation(&k_pva_m);

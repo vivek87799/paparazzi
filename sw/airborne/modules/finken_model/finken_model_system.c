@@ -170,9 +170,9 @@ float takeoff_roll, takeoff_pitch, takeoff_jaw;
 
 void finken_system_model_periodic(void)
 {	
-	takeoff_roll  = (float) radio_control.values[RADIO_ROLL] / 13000.0 * maxRoll;
-	takeoff_pitch = (float) radio_control.values[RADIO_PITCH] / 13000.0 * maxPitch;
-	takeoff_jaw   = (float) radio_control.values[RADIO_YAW] / 13000.0 * maxYaw;
+	takeoff_roll  = (float) radio_control.values[RADIO_ROLL] / 12236.0 * maxRoll;
+	takeoff_pitch = (float) radio_control.values[RADIO_PITCH] / 12236.0 * maxPitch;
+	takeoff_jaw   = (float) radio_control.values[RADIO_YAW] / 12236.0 * maxYaw;
 
 /*
  * Allows manual remote control in autopilot mode
