@@ -220,7 +220,7 @@ void update_z(void) {
 	//velocity_y = fix16_mul(velocity_y, fix16_from_float(3.47826087));
 
 	// compute system variables from flow sensor in z direction
-	position_z = fix16_mul(R33, position_z);
+	position_z = fix16_mul(fix16_mul(R33, position_z), fix16_from_float(-1.0));
 	fix16_t velocity_z = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);
 
 	// compute current velocity in x and y direction
@@ -242,10 +242,10 @@ void update_z(void) {
 	// update measurement vector vector
 	z->data[0][0] = fix16_add(z->data[0][0], position_x);	  	// pos_x
 	z->data[1][0] = fix16_add(z->data[1][0], position_y);		// pos_y
-	z->data[2][0] = fix16_mul(position_z, fix16_from_float(-1.0));			// pos_z
+	z->data[2][0] = position_z;		// pos_z
 	z->data[3][0] = velocity_x;		// vel_x
 	z->data[4][0] = velocity_y;		// vel_y
-	z->data[5][0] = fix16_mul(velocity_z, fix16_from_float(-1.0));			// vel_z
+	z->data[5][0] = velocity_z;		// vel_z
 	z->data[6][0] = fix16_add(fix16_add(fix16_mul(R11, acceleration_x),
 		fix16_mul(R12, acceleration_y)), fix16_mul(R13, acceleration_z));	// acc_x
 	z->data[7][0] = fix16_add(fix16_add(fix16_mul(R21, acceleration_x), 
@@ -373,8 +373,8 @@ void kalman_init(void) {
 	// where S contains the noise
 	// here Q = S
 	matrix_set(Q, 0, 0, fix16_from_float(0.1));
-	matrix_set(Q, 1, 1, fix16_from_float(0.05));
-	matrix_set(Q, 2, 2, fix16_from_float(1.0));
+	matrix_set(Q, 1, 1, fix16_from_float(0.1));
+	matrix_set(Q, 2, 2, fix16_from_float(2.0));
 
 	// get observation model matrix from struct
 	mf16 *H = kalman_get_observation_transformation(&k_pva_m);
@@ -417,6 +417,7 @@ void kalman_init(void) {
 extern void update_output(void) {
 	// get state vector from struct
 	mf16 *x = kalman_get_state_vector(&k_pva);
+	mf16 *P = kalman_get_system_covariance(&k_pva);
 
 	// declaration of variables
 	int8_t on_ground = 0;
@@ -434,6 +435,7 @@ extern void update_output(void) {
 	if (z > 0.0) {
 		kalman_sv_pva.pos_z = 0;
 		x->data[2][0] = 0;
+		P->data[2][2] = 0.01;
 		on_ground = 1;
 	}
 	else {
@@ -448,6 +450,7 @@ extern void update_output(void) {
 	if ((on_ground == 1) && (z_v > 0.0)) {
 		kalman_sv_pva.vel_z = 0;
 		x->data[5][0] = 0;
+		P->data[5][5] = 0.01;
 	}
 	else {
 		kalman_sv_pva.vel_z = SPEED_BFP_OF_REAL(fix16_to_float(x->data[5][0]));
@@ -468,9 +471,9 @@ extern void predict(void) {
 
 // correction step (periodic function call by paparazzi)
 extern void correct(void) {
-//	update_z();
-//	kalman_correct(&k_pva, &k_pva_m);
-//	update_output();
+	update_z();
+	kalman_correct(&k_pva, &k_pva_m);
+	update_output();
 }
 
 // telemetry
