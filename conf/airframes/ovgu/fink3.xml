@@ -45,8 +45,12 @@
     <load name="finken_ir_adc.xml">
       <configure name="ADC_IR" value="ADC_3"/>
 		</load>
-		<load name="finken_wall_avoid.xml"/>
+    <load name="finken_wall_avoid.xml"/>
 	</modules>
+
+	<section name="FINKEN_WALL_AVOID" prefix="FINKEN_WALL_AVOID_"/>
+	<include href="conf/modules/finken_wall_avoid/common.xml"/>
+	<include href="conf/modules/finken_wall_avoid/$AC_ID_param.xml"/>
 
 	<!--
 		^Front^

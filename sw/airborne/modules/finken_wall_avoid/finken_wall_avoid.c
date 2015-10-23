@@ -5,18 +5,18 @@
 #define Tv FINKEN_WALL_AVOID_CONTROL_HOLD_TIME
 #define Kp FINKEN_WALL_AVOID_CONTROL_GAIN
 
-#define a0 /*-0.1031288*/(T-2.0f*T1)/(T+2.0f*T1)
-#define b0 /*51.9420027*/Kp*(T-2.0f*Tv)/(T+2.0f*T1)
-#define b1 /*-50.675209*/Kp*(T+2.0f*Tv)/(T+2.0f*T1)
+#define a0 (T-2.0f*T1)/(T+2.0f*T1)
+#define b0 Kp*(T-2.0f*Tv)/(T+2.0f*T1)
+#define b1 Kp*(T+2.0f*Tv)/(T+2.0f*T1)
 
-static const float maxControlRoll  = 15.0f;
-static const float maxControlPitch = 15.0f;
-static const float guardDist       =  0.7f;
-static const float goalDist        =  1.2f;
-static const float freeDist        =  0.999f*1.0f;
-static const float maxDist         =  1.5f;
-static const float rollOffset      =  2.0f;
-static const float pitchOffset     =  0.0f;
+static const float maxControlRoll  = FINKEN_WALL_AVOID_MAX_CONTROL;
+static const float maxControlPitch = FINKEN_WALL_AVOID_MAX_CONTROL;
+static const float guardDist       = FINKEN_WALL_AVOID_GUARD_DIST;
+static const float goalDist        = FINKEN_WALL_AVOID_GOAL_DIST;
+static const float freeDist        = FINKEN_WALL_AVOID_FREE_FACTOR * FINKEN_WALL_AVOID_GOAL_DIST;
+static const float maxDist         = FINKEN_WALL_AVOID_MAX_DIST;
+static const float rollOffset      = FINKEN_WALL_AVOID_ROLL_OFFSET;
+static const float pitchOffset     = FINKEN_WALL_AVOID_PITCH_OFFSET;
 
 float pitchError_k1, pitch_k1, rollError_k1, roll_k1;
 float pitchInDamped, rollInDamped;
