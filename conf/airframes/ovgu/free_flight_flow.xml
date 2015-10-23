@@ -39,7 +39,7 @@
   </firmware>
 
 	<modules>
-		<load name="sensor_filter.xml" />-->
+		<load name="sensor_filter.xml" />
 		<!-- currently brakes the copter
 		<load name="sonar_array_i2c.xml">
 			<define name="SONAR_I2C_DEV" value="i2c2"/>

@@ -46,12 +46,6 @@ static const float minZ = FINKEN_MIN_Z;
 
 void finken_sensor_model_init(void)
 {
-  i = 0;
-  init = false;
-  frontBuf[0] = 2.0f;
-  leftBuf[0] = 2.0f;
-  backBuf[0] = 2.0f;
-  rightBuf[0] = 2.0f;
   memset(&finken_sensor_model, 0, sizeof(struct sensor_model_s));
 
   register_periodic_telemetry(DefaultPeriodic, "FINKEN_SENSOR_MODEL", send_finken_sensor_model_telemetry);
