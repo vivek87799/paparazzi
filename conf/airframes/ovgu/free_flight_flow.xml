@@ -39,25 +39,26 @@
   </firmware>
 
 	<modules>
-		<!--<load name="sensor_filter.xml" />-->
+		<load name="sensor_filter.xml" />-->
+		<!-- currently brakes the copter
 		<load name="sonar_array_i2c.xml">
 			<define name="SONAR_I2C_DEV" value="i2c2"/>
 			<define name="USE_I2C2" />
 			<define name="I2C2_CLOCK_SPEED" value="5000" />
-		</load>
-		<!--<load name="mavlink_decoder.xml">
+		</load> -->
+		<load name="mavlink_decoder.xml">
 			<configure name="MAVLINK_PORT" value="UART2" />
 			<configure name="MAVLINK_BAUD" value="B115200" />
-		</load>-->
-		<!--<load name="px4flow.xml" />-->
- 	  <load name="finken_ir_adc.xml">
-       <configure name="ADC_IR" value="ADC_3"/>
-    </load>
-    <load name="finken_model.xml">
-			<!--<define name="USE_FLOW"/>-->
-			<define name="USE_SENSOR_TOWER"/>
 		</load>
-    <!--<load name="finken_wall_avoid.xml"/>-->
+		<load name="px4flow.xml" />
+ 	  <!--<load name="finken_ir_adc.xml">
+       <configure name="ADC_IR" value="ADC_3"/>
+    </load>-->
+    <load name="finken_model.xml">
+			<define name="USE_FLOW"/>
+			<!--<define name="USE_SENSOR_TOWER"/>-->
+		</load>
+    <load name="finken_rc_passthrough.xml"/>
 	</modules>
 
 	<section name="FINKEN" prefix="FINKEN_"/>
