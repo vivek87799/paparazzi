@@ -86,7 +86,7 @@ void update_u(void) {
 	// ------------------------------------------------------------------------
 	// ------------------- start of autopilot as control unit -----------------
 	// ------------------------------------------------------------------------
-
+/*
 	// controll data from autopilot
 	float alpha = (finken_actuators_model.roll / 180.0) * PI;
 	float beta = (finken_actuators_model.pitch / 180.0) * PI;
@@ -105,7 +105,7 @@ void update_u(void) {
 	else {
 		throttle = finken_actuators_model.thrust * 100;
 	}
-
+*/
 	// ------------------------------------------------------------------------
 	// -------------------- end of autopilot as control unit ------------------
 	// ------------------------------------------------------------------------
@@ -113,7 +113,7 @@ void update_u(void) {
 	// ------------------------------------------------------------------------
 	// ---------------- start of radio controller as control unit -------------
 	// ------------------------------------------------------------------------
-/*
+
 	// controll data from controller
 	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (12236*180) * 20 * PI;
 	float beta = ((float) radio_control.values[RADIO_PITCH]) / (12236*180) * 20 * PI;
@@ -132,7 +132,7 @@ void update_u(void) {
 	if (beta<0.017453 && beta>-0.017453) {
 		beta = 0.0;
 	}
-*/
+
 	// ------------------------------------------------------------------------
 	// ----------------- end of radio controller as control unit --------------
 	// ------------------------------------------------------------------------
