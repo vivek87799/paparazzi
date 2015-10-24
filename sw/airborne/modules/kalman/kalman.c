@@ -48,6 +48,8 @@ kalman16_observation_t k_pva_m;
 // global variable for mass
 fix16_t m;
 
+float q1;
+
 // Error if fixmatrix library is not configured correctly (fixmatrix.h FIXMATRIX_MAX_SIZE)
 #ifndef FIXMATRIX_MAX_SIZE
 #error FIXMATRIX_MAX_SIZE must be defined and greater or equal to the number of states, inputs and measurements.
@@ -86,7 +88,7 @@ void update_u(void) {
 	// ------------------------------------------------------------------------
 	// ------------------- start of autopilot as control unit -----------------
 	// ------------------------------------------------------------------------
-/*
+
 	// controll data from autopilot
 	float alpha = (finken_actuators_model.roll / 180.0) * PI;
 	float beta = (finken_actuators_model.pitch / 180.0) * PI;
@@ -103,9 +105,9 @@ void update_u(void) {
 		throttle = 0.0;
 	}
 	else {
-		throttle = finken_actuators_model.thrust * 100;
+		throttle = finken_actuators_set_point.thrust * 100;
 	}
-*/
+
 	// ------------------------------------------------------------------------
 	// -------------------- end of autopilot as control unit ------------------
 	// ------------------------------------------------------------------------
@@ -113,17 +115,18 @@ void update_u(void) {
 	// ------------------------------------------------------------------------
 	// ---------------- start of radio controller as control unit -------------
 	// ------------------------------------------------------------------------
-
+/*
 	// controll data from controller
 	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (12236*180) * 20 * PI;
 	float beta = ((float) radio_control.values[RADIO_PITCH]) / (12236*180) * 20 * PI;
 	//float theta = ((float) radio_control.values[RADIO_YAW]) / (12236*180) * 90 * PI;
 
 	// theta is permanently set to 0
-	float theta = 0.0;
+	//float theta = 0.0;
 
 	// correction to 0 with 1318
 	float throttle = (((float)radio_control.values[RADIO_THROTTLE]) + 1318.0) / 12236.0 * 100;
+	q1 = (float)radio_control.values[RADIO_THROTTLE];
 
 	// handle controller spezified dead zones
 	if (alpha<0.017453 && alpha>-0.017453) {
@@ -132,7 +135,7 @@ void update_u(void) {
 	if (beta<0.017453 && beta>-0.017453) {
 		beta = 0.0;
 	}
-
+*/
 	// ------------------------------------------------------------------------
 	// ----------------- end of radio controller as control unit --------------
 	// ------------------------------------------------------------------------
@@ -144,8 +147,8 @@ void update_u(void) {
 	fix16_t beta_sin = fix16_sin(fix16_from_float(beta));
 	fix16_t beta_cos = fix16_cos(fix16_from_float(beta));
 
-	fix16_t theta_sin = fix16_sin(fix16_from_float(theta));
-	fix16_t theta_cos = fix16_cos(fix16_from_float(theta));
+	//fix16_t theta_sin = fix16_sin(fix16_from_float(theta));
+	//fix16_t theta_cos = fix16_cos(fix16_from_float(theta));
 
 	fix16_t thrust = fix16_from_float(throttle);
 
@@ -264,7 +267,7 @@ void kalman_init(void) {
 	const fix16_t dt_2 = fix16_sq(dt);
 
 	// initialisation constants
-	m = fix16_from_float(304.0);							// set mass [g]
+	m = fix16_from_float(380.0);							// set mass [g]
 	fix16_t helper_const;									// varible to speed up matrix assignment
 
 	// this constants were declared to calculate the air resistance
@@ -300,25 +303,19 @@ void kalman_init(void) {
 	// s_i(t) = s_i(t-1) + v_i(t-1)*dt + a_i(t-1)*(dt^2)/2
 	matrix_set(A, 0, 0, fix16_one);
 	matrix_set(A, 0, 3, dt);
-	//matrix_set(A, 0, 6, helper_const);
 
 	matrix_set(A, 1, 1, fix16_one);
 	matrix_set(A, 1, 4, dt);
-	//matrix_set(A, 1, 7, helper_const);
 	
 	matrix_set(A, 2, 2, fix16_one);
 	matrix_set(A, 2, 5, dt);
-	//matrix_set(A, 2, 8, helper_const);
 
 	// v_i(t) = v_i(t-1) + a_i(t-1)*dt
 	matrix_set(A, 3, 3, fix16_one);
-	//matrix_set(A, 3, 6, dt);
 
 	matrix_set(A, 4, 4, fix16_one);
-	//matrix_set(A, 4, 7, dt);
 
 	matrix_set(A, 5, 5, fix16_one);
-	//matrix_set(A, 5, 8, dt);
 
 	// this linearistaion was not working (can be useful in the future)
 	// ------------------------------------------------------------------------
@@ -333,11 +330,11 @@ void kalman_init(void) {
 	// linearised using 0 and maximal allowed speed to a given mass
 	// a_i(t) = -c*v(t-1) + [1/m*F_i(t-1)]
 	// second part is in the B matrix
-	matrix_set(A, 6, 3, fix16_from_float(-1.614));
+	//matrix_set(A, 6, 3, fix16_from_float(-1.614));
 
-	matrix_set(A, 7, 4, fix16_from_float(-1.614));
+	//matrix_set(A, 7, 4, fix16_from_float(-1.614));
 
-	matrix_set(A, 8, 5, fix16_from_float(-1.614));
+	//matrix_set(A, 8, 5, fix16_from_float(-1.614));
 
 
 	// get control input model matrix from struct
@@ -410,9 +407,9 @@ void kalman_init(void) {
 	matrix_set(R, 3, 3, fix16_from_float(0.25));
 	matrix_set(R, 4, 4, fix16_from_float(0.25));
 	matrix_set(R, 5, 5, fix16_from_float(0.1));
-	matrix_set(R, 6, 6, fix16_from_float(1.5));
-	matrix_set(R, 7, 7, fix16_from_float(1.5));
-	matrix_set(R, 8, 8, fix16_from_float(1.5));
+	matrix_set(R, 6, 6, fix16_from_float(3.0));
+	matrix_set(R, 7, 7, fix16_from_float(3.0));
+	matrix_set(R, 8, 8, fix16_from_float(3.0));
 
 	// init timestamp
 	last_time = get_sys_time_msec();
