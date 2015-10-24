@@ -382,9 +382,9 @@ void kalman_init(void) {
 	// Q is defined in most of the literature as Q = B S (B^T)
 	// where S contains the noise
 	// here Q = S
-	matrix_set(Q, 0, 0, fix16_from_float(0.1));
-	matrix_set(Q, 1, 1, fix16_from_float(0.1));
-	matrix_set(Q, 2, 2, fix16_from_float(0.1));
+	matrix_set(Q, 0, 0, fix16_from_float(0.5));
+	matrix_set(Q, 1, 1, fix16_from_float(0.5));
+	matrix_set(Q, 2, 2, fix16_from_float(2.0));
 
 	// get observation model matrix from struct
 	mf16 *H = kalman_get_observation_transformation(&k_pva_m);
@@ -407,12 +407,12 @@ void kalman_init(void) {
 	matrix_set(R, 0, 0, fix16_from_float(0.1));
 	matrix_set(R, 1, 1, fix16_from_float(0.1));	
 	matrix_set(R, 2, 2, fix16_from_float(0.01));
-	matrix_set(R, 3, 3, fix16_from_float(0.5));
-	matrix_set(R, 4, 4, fix16_from_float(0.5));
+	matrix_set(R, 3, 3, fix16_from_float(0.25));
+	matrix_set(R, 4, 4, fix16_from_float(0.25));
 	matrix_set(R, 5, 5, fix16_from_float(0.1));
-	matrix_set(R, 6, 6, fix16_from_float(0.5));
-	matrix_set(R, 7, 7, fix16_from_float(0.5));
-	matrix_set(R, 8, 8, fix16_from_float(0.5));
+	matrix_set(R, 6, 6, fix16_from_float(1.5));
+	matrix_set(R, 7, 7, fix16_from_float(1.5));
+	matrix_set(R, 8, 8, fix16_from_float(1.5));
 
 	// init timestamp
 	last_time = get_sys_time_msec();
