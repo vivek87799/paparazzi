@@ -300,25 +300,25 @@ void kalman_init(void) {
 	// s_i(t) = s_i(t-1) + v_i(t-1)*dt + a_i(t-1)*(dt^2)/2
 	matrix_set(A, 0, 0, fix16_one);
 	matrix_set(A, 0, 3, dt);
-	matrix_set(A, 0, 6, helper_const);
+	//matrix_set(A, 0, 6, helper_const);
 
 	matrix_set(A, 1, 1, fix16_one);
 	matrix_set(A, 1, 4, dt);
-	matrix_set(A, 1, 7, helper_const);
+	//matrix_set(A, 1, 7, helper_const);
 	
 	matrix_set(A, 2, 2, fix16_one);
 	matrix_set(A, 2, 5, dt);
-	matrix_set(A, 2, 8, helper_const);
+	//matrix_set(A, 2, 8, helper_const);
 
 	// v_i(t) = v_i(t-1) + a_i(t-1)*dt
 	matrix_set(A, 3, 3, fix16_one);
-	matrix_set(A, 3, 6, dt);
+	//matrix_set(A, 3, 6, dt);
 
 	matrix_set(A, 4, 4, fix16_one);
-	matrix_set(A, 4, 7, dt);
+	//matrix_set(A, 4, 7, dt);
 
 	matrix_set(A, 5, 5, fix16_one);
-	matrix_set(A, 5, 8, dt);
+	//matrix_set(A, 5, 8, dt);
 
 	// this linearistaion was not working (can be useful in the future)
 	// ------------------------------------------------------------------------
@@ -342,6 +342,16 @@ void kalman_init(void) {
 
 	// get control input model matrix from struct
 	mf16 *B = kalman_get_input_transition(&k_pva);
+
+	helper_const = fix16_div(fix16_div(dt_2, fix16_from_float(2.0)), m);
+	matrix_set(B, 0, 0, helper_const);
+	matrix_set(B, 1, 1, helper_const);
+	matrix_set(B, 2, 2, helper_const);
+
+	helper_const = fix16_div(dt, m);
+	matrix_set(B, 3, 0, helper_const);
+	matrix_set(B, 4, 1, helper_const);
+	matrix_set(B, 5, 2, helper_const);
 
 	// a_i(t) = [-c*v(t-1)] + 1/m*F_i(t-1)
 	// first part is in the A matrix
@@ -374,7 +384,7 @@ void kalman_init(void) {
 	// here Q = S
 	matrix_set(Q, 0, 0, fix16_from_float(0.1));
 	matrix_set(Q, 1, 1, fix16_from_float(0.1));
-	matrix_set(Q, 2, 2, fix16_from_float(2.0));
+	matrix_set(Q, 2, 2, fix16_from_float(0.1));
 
 	// get observation model matrix from struct
 	mf16 *H = kalman_get_observation_transformation(&k_pva_m);

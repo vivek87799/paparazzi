@@ -709,8 +709,15 @@ void kalman_correct(kalman16_t *kf, kalman16_observation_t *kfm)
     /************************************************************************/
 
     // P = P - K*(H*P)
-    mf16_mul(&temp_HP, H, P);                   // temp_HP = H*P
-    mf16_mul_sub(P, &K, &temp_HP);              // P -= K*temp_HP
+    //mf16_mul(&temp_HP, H, P);                   // temp_HP = H*P
+    //mf16_mul_sub(P, &K, &temp_HP);              // P -= K*temp_HP
+
+	// Joseph form
+	// P = (I-K*H)*P*(I-K*H)' + K*R*K' 
+	mf16_fill_diagonal(&temp_HP, fix16_one);
+	mf16_mul_sub(&temp_HP, &K, H);
+	mf16_mul_abat(P, P, &temp_HP);
+	mf16_mul_abat_add(P, &K, &kfm->R);
 }
 
 #endif
