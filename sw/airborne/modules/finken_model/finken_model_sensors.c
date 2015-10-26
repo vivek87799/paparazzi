@@ -65,8 +65,8 @@ void finken_sensor_model_periodic(void)
 
   memcpy(&finken_sensor_model.rates, &imu.gyro, sizeof(struct Int32Rates));
 	/* x = y and y = x because of the coord. transformation from sensor to body coord. system */
-	finken_sensor_model.acceleration.x = imu.accel.y;
-	finken_sensor_model.acceleration.y = -imu.accel.x;
+	finken_sensor_model.acceleration.x = -imu.accel.y;
+	finken_sensor_model.acceleration.y = imu.accel.x;
 	finken_sensor_model.acceleration.z = -imu.accel.z;
 	//memcpy(&finken_sensor_model.acceleration, &imu.accel, sizeof(struct Int32Vect3));
 

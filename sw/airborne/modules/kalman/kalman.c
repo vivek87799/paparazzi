@@ -88,7 +88,7 @@ void update_u(void) {
 	// ------------------------------------------------------------------------
 	// ------------------- start of autopilot as control unit -----------------
 	// ------------------------------------------------------------------------
-
+/*
 	// controll data from autopilot
 	float alpha = (finken_actuators_model.roll / 180.0) * PI;
 	float beta = (finken_actuators_model.pitch / 180.0) * PI;
@@ -107,7 +107,7 @@ void update_u(void) {
 	else {
 		throttle = finken_actuators_set_point.thrust * 100;
 	}
-
+*/
 	// ------------------------------------------------------------------------
 	// -------------------- end of autopilot as control unit ------------------
 	// ------------------------------------------------------------------------
@@ -115,7 +115,7 @@ void update_u(void) {
 	// ------------------------------------------------------------------------
 	// ---------------- start of radio controller as control unit -------------
 	// ------------------------------------------------------------------------
-/*
+
 	// controll data from controller
 	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (12236*180) * 20 * PI;
 	float beta = ((float) radio_control.values[RADIO_PITCH]) / (12236*180) * 20 * PI;
@@ -135,7 +135,7 @@ void update_u(void) {
 	if (beta<0.017453 && beta>-0.017453) {
 		beta = 0.0;
 	}
-*/
+
 	// ------------------------------------------------------------------------
 	// ----------------- end of radio controller as control unit --------------
 	// ------------------------------------------------------------------------
@@ -381,7 +381,7 @@ void kalman_init(void) {
 	// here Q = S
 	matrix_set(Q, 0, 0, fix16_from_float(0.5));
 	matrix_set(Q, 1, 1, fix16_from_float(0.5));
-	matrix_set(Q, 2, 2, fix16_from_float(2.0));
+	matrix_set(Q, 2, 2, fix16_from_float(1.0));
 
 	// get observation model matrix from struct
 	mf16 *H = kalman_get_observation_transformation(&k_pva_m);
@@ -401,15 +401,15 @@ void kalman_init(void) {
 	mf16 *R = kalman_get_observation_process_noise(&k_pva_m);		// set observation error
 
 	// sensor uncertainty in the diagonal of the matrix
-	matrix_set(R, 0, 0, fix16_from_float(0.1));
-	matrix_set(R, 1, 1, fix16_from_float(0.1));	
+	matrix_set(R, 0, 0, fix16_from_float(0.05));
+	matrix_set(R, 1, 1, fix16_from_float(0.05));	
 	matrix_set(R, 2, 2, fix16_from_float(0.01));
-	matrix_set(R, 3, 3, fix16_from_float(0.25));
-	matrix_set(R, 4, 4, fix16_from_float(0.25));
-	matrix_set(R, 5, 5, fix16_from_float(0.1));
-	matrix_set(R, 6, 6, fix16_from_float(3.0));
-	matrix_set(R, 7, 7, fix16_from_float(3.0));
-	matrix_set(R, 8, 8, fix16_from_float(3.0));
+	matrix_set(R, 3, 3, fix16_from_float(0.3));
+	matrix_set(R, 4, 4, fix16_from_float(0.3));
+	matrix_set(R, 5, 5, fix16_from_float(0.15));
+	matrix_set(R, 6, 6, fix16_from_float(1.95));
+	matrix_set(R, 7, 7, fix16_from_float(1.95));
+	matrix_set(R, 8, 8, fix16_from_float(1.95));
 
 	// init timestamp
 	last_time = get_sys_time_msec();
