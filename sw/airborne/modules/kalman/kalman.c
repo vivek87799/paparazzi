@@ -152,9 +152,9 @@ void update_u(void) {
 
 	fix16_t thrust = fix16_from_float(throttle);
 
-	// Conversionsfunction from Christoph: thrust[g] = 0.01514x^2 + 0.65268x [% --> gramm] corresponding to 4 motors
-	fix16_t thrust_converted = fix16_mul(fix16_add(fix16_mul(fix16_from_float(0.01514), fix16_mul(thrust, thrust)),
-		fix16_mul(fix16_from_float(0.65268), thrust)), fix16_from_float(4.0));
+	// Conversionsfunction from Christoph: thrust[g] = 0.01514x^2 + 0.65268x [% --> gramm] corresponding to 4 motors converted to kg
+	fix16_t thrust_converted = fix16_div(fix16_mul(fix16_add(fix16_mul(fix16_from_float(0.01514), fix16_mul(thrust, thrust)),
+		fix16_mul(fix16_from_float(0.65268), thrust)), fix16_from_float(4.0)), fix16_from_float(1000.0));
 
 	// convert to force
 	thrust_converted = fix16_mul(thrust_converted, fix16_from_float(9.81));
@@ -267,7 +267,7 @@ void kalman_init(void) {
 	const fix16_t dt_2 = fix16_sq(dt);
 
 	// initialisation constants
-	m = fix16_from_float(380.0);							// set mass [g]
+	m = fix16_from_float(0.380);							// set mass [kg]
 	fix16_t helper_const;									// varible to speed up matrix assignment
 
 	// this constants were declared to calculate the air resistance

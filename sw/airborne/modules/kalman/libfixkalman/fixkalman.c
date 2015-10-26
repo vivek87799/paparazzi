@@ -482,8 +482,8 @@ void kalman_predict_P(register kalman16_t *const kf)
     mf16 *RESTRICT const P = &kf->P;
     mf16 *RESTRICT const Q = &kf->Q;
 
-    mf16 P_temp = { P->rows, P->columns };
-    mf16 BQ_temp = { A->rows, B->columns };
+    //mf16 P_temp = { P->rows, P->columns };
+    //mf16 BQ_temp = { A->rows, B->columns };
 
     /************************************************************************/
     /* Predict next covariance using system dynamics and input              */
@@ -569,8 +569,8 @@ void kalman_predict_P_tuned(register kalman16_t *const kf, fix16_t lambda)
     const mf16 *RESTRICT const B = &kf->B;
     mf16 *RESTRICT const P = &kf->P;
     
-    mf16 P_temp = { P->rows, P->columns };
-    mf16 BQ_temp = { A->rows, B->columns };
+    //mf16 P_temp = { P->rows, P->columns };
+    //mf16 BQ_temp = { A->rows, B->columns };
 
     /************************************************************************/
     /* Calculate lambda                                                     */
