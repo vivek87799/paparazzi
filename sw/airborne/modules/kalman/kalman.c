@@ -88,7 +88,7 @@ void update_u(void) {
 	// ------------------------------------------------------------------------
 	// ------------------- start of autopilot as control unit -----------------
 	// ------------------------------------------------------------------------
-/*
+
 	// controll data from autopilot
 	float alpha = (finken_actuators_model.roll / 180.0) * PI;
 	float beta = (finken_actuators_model.pitch / 180.0) * PI;
@@ -107,7 +107,7 @@ void update_u(void) {
 	else {
 		throttle = finken_actuators_set_point.thrust * 100;
 	}
-*/
+
 	// ------------------------------------------------------------------------
 	// -------------------- end of autopilot as control unit ------------------
 	// ------------------------------------------------------------------------
@@ -115,7 +115,7 @@ void update_u(void) {
 	// ------------------------------------------------------------------------
 	// ---------------- start of radio controller as control unit -------------
 	// ------------------------------------------------------------------------
-
+/*
 	// controll data from controller
 	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (12236*180) * 20 * PI;
 	float beta = ((float) radio_control.values[RADIO_PITCH]) / (12236*180) * 20 * PI;
@@ -135,7 +135,7 @@ void update_u(void) {
 	if (beta<0.017453 && beta>-0.017453) {
 		beta = 0.0;
 	}
-
+*/
 	// ------------------------------------------------------------------------
 	// ----------------- end of radio controller as control unit --------------
 	// ------------------------------------------------------------------------
@@ -382,6 +382,12 @@ void kalman_init(void) {
 	matrix_set(Q, 0, 0, fix16_from_float(0.5));
 	matrix_set(Q, 1, 1, fix16_from_float(0.5));
 	matrix_set(Q, 2, 2, fix16_from_float(1.0));
+	matrix_set(Q, 3, 3, fix16_from_float(0.5));
+	matrix_set(Q, 4, 4, fix16_from_float(0.5));
+	matrix_set(Q, 5, 5, fix16_from_float(1.0));
+	matrix_set(Q, 6, 6, fix16_from_float(1.0));
+	matrix_set(Q, 7, 7, fix16_from_float(1.0));
+	matrix_set(Q, 8, 8, fix16_from_float(1.0));
 
 	// get observation model matrix from struct
 	mf16 *H = kalman_get_observation_transformation(&k_pva_m);

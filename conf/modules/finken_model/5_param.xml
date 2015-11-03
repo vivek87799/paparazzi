@@ -26,6 +26,6 @@
 	</section>
 	<!-- Kalman filter -->
 	<section name="KALMAN" prefix="KALMAN_">
-		<define name="MASS"                       value="0.380" />
+		<define name="MASS"                       value="0.304" />
 	</section>
 </airframe>
