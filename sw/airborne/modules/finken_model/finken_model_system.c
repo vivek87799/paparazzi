@@ -82,17 +82,17 @@ float thrust_k_dec2 = 0.0;
 float error_z_k_dec1 = 0.0;
 float error_z_k_dec2 = 0.0;
 
-static const float maxRoll   = 20.0f;
-static const float maxPitch  = 20.0f;
-static const float maxYaw    = 20.0f;
-static const float deadRoll  =  1.0f;
-static const float deadPitch =  1.0f;
-static const float deadYaw   =  1.0f;
+static const float maxRCRoll       =  5.0f;
+static const float maxRCPitch      =  5.0f;
+static const float maxRCYaw        = 20.0f;
+static const float deadRCRoll      =  1.0f;
+static const float deadRCPitch     =  1.0f;
+static const float deadRCYaw       =  1.0f;
 
-float error_x_p = 0.0;
+/*float error_x_p = 0.0;
 float error_y_p = 0.0;
 float error_x_d = 0.0;
-float error_y_d = 0.0;
+float error_y_d = 0.0;*/
 
 float temp_pitch = 0;
 float temp_roll = 0;
@@ -100,6 +100,8 @@ float temp_roll = 0;
 void finken_system_model_init(void) {
   finken_system_set_point.z          = 0.0;
   finken_system_set_point.yaw        = 0.0;
+  finken_system_set_point.roll       = 0.0;
+  finken_system_set_point.pitch      = 0.0;
 	finken_system_model_control_height = 0;
   finken_system_set_point.velocity_x = FINKEN_VELOCITY_DESIRED_Y;
   finken_system_set_point.velocity_y = FINKEN_VELOCITY_DESIRED_X;
@@ -112,26 +114,21 @@ void finken_system_model_init(void) {
  * Use finken_system_set_point to calculate new actuator settings
  */
 
-float takeoff_roll, takeoff_pitch;
-
 void finken_system_model_periodic(void)
 {	
-	finken_actuators_set_point.roll  = (float) radio_control.values[RADIO_ROLL] / 13000.0 * maxRoll;
-	finken_actuators_set_point.pitch = (float) radio_control.values[RADIO_PITCH] / 13000.0 * maxPitch;
-	finken_actuators_set_point.yaw   = (float) radio_control.values[RADIO_YAW] / 13000.0 * maxYaw;
+	float rcRoll  = (float) radio_control.values[RADIO_ROLL] / 13000.0 * maxRCRoll;
+	float rcPitch = (float) radio_control.values[RADIO_PITCH] / 13000.0 * maxRCPitch;
+	float rcYaw   = (float) radio_control.values[RADIO_YAW] / 13000.0 * maxRCYaw;
 
-	if(finken_actuators_set_point.roll < deadRoll && finken_actuators_set_point.roll > -deadRoll)
-		finken_actuators_set_point.roll = 0.0f;
-	if(finken_actuators_set_point.roll > maxRoll)
-		finken_actuators_set_point.roll = maxRoll;
-	if(finken_actuators_set_point.pitch < deadPitch&& finken_actuators_set_point.pitch > -deadPitch)
-		finken_actuators_set_point.pitch = 0.0f;
-	if(finken_actuators_set_point.pitch > maxPitch)
-		finken_actuators_set_point.pitch = maxPitch;
-	if(finken_actuators_set_point.yaw < deadPitch && finken_actuators_set_point.yaw > -deadYaw)
-		finken_actuators_set_point.yaw = 0.0f;
-	if(finken_actuators_set_point.yaw > maxYaw)
-		finken_actuators_set_point.yaw = maxYaw;
+	rcRoll = (rcRoll < -maxRCPitch) ? -maxRCPitch : rcRoll;
+	rcRoll = (rcRoll > maxRCPitch)  ?  maxRCPitch : rcRoll;
+	rcRoll = (rcRoll< deadRCPitch && rcRoll > -deadRCPitch) ? 0.0f : rcRoll;
+	rcPitch = (rcPitch < -maxRCPitch) ? -maxRCPitch : rcPitch;
+	rcPitch = (rcPitch > maxRCPitch)  ?  maxRCPitch : rcPitch;
+	rcPitch = (rcPitch< deadRCPitch && rcPitch > -deadRCPitch) ? 0.0f : rcPitch;
+	rcYaw = (rcYaw < deadRCYaw && rcYaw > -deadRCYaw) ? 0.0f : rcYaw;
+	rcYaw = (rcYaw > maxRCYaw) ? maxRCYaw : rcYaw;
+	rcYaw = (rcYaw < -maxRCYaw) ? maxRCYaw : rcYaw;
 	
 	float error_z_k = finken_system_set_point.z - POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
 
@@ -159,7 +156,11 @@ void finken_system_model_periodic(void)
 	else{
 		finken_actuators_set_point.thrust = FINKEN_THRUST_DEFAULT + thrust_k / 100;
 	}
-	error_x_p = (finken_system_set_point.velocity_x - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x)) * FINKEN_VELOCITY_X_P;
+
+	finken_system_set_point.pitch = rcPitch;
+	finken_system_set_point.roll = rcRoll;
+
+	/*error_x_p = (finken_system_set_point.velocity_x - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x)) * FINKEN_VELOCITY_X_P;
 	error_y_p = (finken_system_set_point.velocity_y - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y)) * FINKEN_VELOCITY_Y_P;
 	error_x_d = (0 - ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.x)) * FINKEN_VELOCITY_X_D;	//constant velocity
 	error_y_d = (0 - ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.y)) * FINKEN_VELOCITY_Y_D;	//constant velocity
@@ -171,7 +172,7 @@ void finken_system_model_periodic(void)
 		finken_actuators_set_point.pitch = error_x_p + error_x_d;
 		finken_actuators_set_point.roll = error_y_p + error_y_d;
 	}
-	/*else	{
+		else	{
 	finken_actuators_set_point.pitch = 0.0;
 	finken_actuators_set_point.roll  = 0.0;
 	}*/
