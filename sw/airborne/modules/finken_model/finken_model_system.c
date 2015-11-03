@@ -38,11 +38,11 @@
  *	P and D gains for the velocity control in x and y direction
  */
 #ifndef FINKEN_VELOCITY_X_P
-#define FINKEN_VELOCITY_X_P 28
+#define FINKEN_VELOCITY_X_P 5
 #endif
 
 #ifndef FINKEN_VELOCITY_Y_P
-#define FINKEN_VELOCITY_Y_P 28
+#define FINKEN_VELOCITY_Y_P 5
 #endif
 
 #ifndef FINKEN_VELOCITY_X_D
@@ -146,6 +146,11 @@ float error_py_p = 0.0;
 float error_px_d = 0.0;
 float error_py_d = 0.0;
 
+float velocity_change_x = 0.0;
+float velocity_change_y = 0.0;
+float last_velocity_x = 0.0;
+float last_velocity_y = 0.0;
+
 float set_point_position_x = 0.0;
 float set_point_position_y = 0.0;
 
@@ -177,8 +182,8 @@ void finken_system_model_periodic(void)
 /*
  * Allows manual remote control in autopilot mode
  */
-
-	/*
+/*
+	
 	finken_actuators_set_point.roll = takeoff_roll;
 	finken_actuators_set_point.pitch = takeoff_pitch;
 
@@ -194,8 +199,8 @@ void finken_system_model_periodic(void)
 		finken_actuators_set_point.yaw = 0.0f;
 	if(finken_actuators_set_point.yaw > maxYaw)
 		finken_actuators_set_point.yaw = maxYaw; 
-	*/
 	
+	*/
 	float error_z_k = finken_system_set_point.z - POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
 
 	float thrust_k = -a1 * thrust_k_dec1 - a0 * thrust_k_dec2 + b2 * error_z_k + b1 * error_z_k_dec1 + b0 * error_z_k_dec2;
@@ -228,12 +233,16 @@ void finken_system_model_periodic(void)
 	*/
 
 	if(FINKEN_VELOCITY_CONTROL_MODE)	{
+
+		velocity_change_x = last_velocity_x - finken_sensor_model.velocity.x;
+		velocity_change_y = last_velocity_y - finken_sensor_model.velocity.y;
+
 		error_vx_p = (finken_system_set_point.velocity_x - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x)) * FINKEN_VELOCITY_X_P;
 		error_vy_p = (finken_system_set_point.velocity_y - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y)) * FINKEN_VELOCITY_Y_P;
 		error_vx_d = (0 - ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.x)) * FINKEN_VELOCITY_X_D;	//constant velocity
 		error_vy_d = (0 - ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.y)) * FINKEN_VELOCITY_Y_D;	//constant velocity
 
-		finken_actuators_set_point.pitch = -error_vx_p - error_vx_d;
+		finken_actuators_set_point.pitch += -error_vx_p - error_vx_d;
 		if (finken_actuators_set_point.pitch > 20.0f)
 			finken_actuators_set_point.pitch = 20.0f;
 		else if (finken_actuators_set_point.pitch < -20.0f)

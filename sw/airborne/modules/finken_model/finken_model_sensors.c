@@ -67,8 +67,8 @@ void finken_sensor_model_periodic(void)
 	/* x = y and y = x because of the coord. transformation from sensor to body coord. system */
 	finken_sensor_model.acceleration.x = imu.accel.y;
 	finken_sensor_model.acceleration.y = -imu.accel.x;
-	finken_sensor_model.acceleration.z = imu.accel.z;
-  memcpy(&finken_sensor_model.acceleration, &imu.accel, sizeof(struct Int32Vect3));
+	finken_sensor_model.acceleration.z = -imu.accel.z;
+ // memcpy(&finken_sensor_model.acceleration, &imu.accel, sizeof(struct Int32Vect3));
 
 #ifdef  USE_SONAR_TOWER
 	finken_sensor_model.distance_d_front = sonar_values.front;
