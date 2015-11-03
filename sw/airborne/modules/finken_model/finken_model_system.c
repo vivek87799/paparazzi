@@ -129,17 +129,17 @@ float thrust_k_dec2 = 0.0;
 float error_z_k_dec1 = 0.0;
 float error_z_k_dec2 = 0.0;
 
-static const float maxRoll   = 20.0f;
-static const float maxPitch  = 20.0f;
-static const float maxYaw    = 20.0f;
-static const float deadRoll  =  1.0f;
-static const float deadPitch =  1.0f;
-static const float deadYaw   =  1.0f;
-
 float error_vx_p = 0.0;
 float error_vy_p = 0.0;
 float error_vx_d = 0.0;
 float error_vy_d = 0.0;
+
+static const float maxRCRoll       =  5.0f;
+static const float maxRCPitch      =  5.0f;
+static const float maxRCYaw        = 20.0f;
+static const float deadRCRoll      =  1.0f;
+static const float deadRCPitch     =  1.0f;
+static const float deadRCYaw       =  1.0f;
 
 float error_px_p = 0.0;
 float error_py_p = 0.0;
@@ -157,8 +157,11 @@ float set_point_position_y = 0.0;
 uint16_t step = 0;
 
 void finken_system_model_init(void) {
-	finken_system_set_point.z          = 0.0;
- 	finken_system_set_point.yaw        = 0.0;
+  finken_system_set_point.z          = 0.0;
+  finken_system_set_point.yaw        = 0.0;
+  finken_system_set_point.roll       = 0.0;
+  finken_system_set_point.pitch      = 0.0;
+
 	finken_system_model_control_height = 0;
 	finken_system_set_point.velocity_x = FINKEN_VELOCITY_DESIRED_Y;
 	finken_system_set_point.velocity_y = FINKEN_VELOCITY_DESIRED_X;
@@ -171,36 +174,26 @@ void finken_system_model_init(void) {
  * Use finken_system_set_point to calculate new actuator settings
  */
 
-float takeoff_roll, takeoff_pitch, takeoff_jaw;
 
 void finken_system_model_periodic(void)
 {	
-	takeoff_roll  = (float) radio_control.values[RADIO_ROLL] / 13000.0 * maxRoll;
-	takeoff_pitch = (float) radio_control.values[RADIO_PITCH] / 13000.0 * maxPitch;
-	takeoff_jaw   = (float) radio_control.values[RADIO_YAW] / 13000.0 * maxYaw;
-
 /*
  * Allows manual remote control in autopilot mode
  */
-/*
-	
-	finken_actuators_set_point.roll = takeoff_roll;
-	finken_actuators_set_point.pitch = takeoff_pitch;
+	float rcRoll  = (float) radio_control.values[RADIO_ROLL] / 13000.0 * maxRCRoll;
+	float rcPitch = (float) radio_control.values[RADIO_PITCH] / 13000.0 * maxRCPitch;
+	float rcYaw   = (float) radio_control.values[RADIO_YAW] / 13000.0 * maxRCYaw;
 
-	if(finken_actuators_set_point.roll < deadRoll && finken_actuators_set_point.roll > -deadRoll)
-		finken_actuators_set_point.roll = 0.0f;
-	if(finken_actuators_set_point.roll > maxRoll)
-		finken_actuators_set_point.roll = maxRoll;
-	if(finken_actuators_set_point.pitch < deadPitch&& finken_actuators_set_point.pitch > -deadPitch)
-		finken_actuators_set_point.pitch = 0.0f;
-	if(finken_actuators_set_point.pitch > maxPitch)
-		finken_actuators_set_point.pitch = maxPitch;
-	if(finken_actuators_set_point.yaw < deadPitch && finken_actuators_set_point.yaw > -deadYaw)
-		finken_actuators_set_point.yaw = 0.0f;
-	if(finken_actuators_set_point.yaw > maxYaw)
-		finken_actuators_set_point.yaw = maxYaw; 
+	rcRoll = (rcRoll < -maxRCPitch) ? -maxRCPitch : rcRoll;
+	rcRoll = (rcRoll > maxRCPitch)  ?  maxRCPitch : rcRoll;
+	rcRoll = (rcRoll< deadRCPitch && rcRoll > -deadRCPitch) ? 0.0f : rcRoll;
+	rcPitch = (rcPitch < -maxRCPitch) ? -maxRCPitch : rcPitch;
+	rcPitch = (rcPitch > maxRCPitch)  ?  maxRCPitch : rcPitch;
+	rcPitch = (rcPitch< deadRCPitch && rcPitch > -deadRCPitch) ? 0.0f : rcPitch;
+	rcYaw = (rcYaw < deadRCYaw && rcYaw > -deadRCYaw) ? 0.0f : rcYaw;
+	rcYaw = (rcYaw > maxRCYaw) ? maxRCYaw : rcYaw;
+	rcYaw = (rcYaw < -maxRCYaw) ? maxRCYaw : rcYaw;
 	
-	*/
 	float error_z_k = finken_system_set_point.z - POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
 
 	float thrust_k = -a1 * thrust_k_dec1 - a0 * thrust_k_dec2 + b2 * error_z_k + b1 * error_z_k_dec1 + b0 * error_z_k_dec2;
@@ -247,11 +240,12 @@ void finken_system_model_periodic(void)
 			finken_actuators_set_point.pitch = 20.0f;
 		else if (finken_actuators_set_point.pitch < -20.0f)
 			finken_actuators_set_point.pitch = -20.0f;
-		finken_actuators_set_point.roll = error_vy_p + error_vy_d;
+		finken_actuators_set_point.roll += error_vy_p + error_vy_d;
 		if (finken_actuators_set_point.roll > 20.0f)
 			finken_actuators_set_point.roll = 20.0f;
 		else if (finken_actuators_set_point.roll < -20.0f)
 			finken_actuators_set_point.roll = -20.0f;
+
 	} else if(FINKEN_POSITION_CONTROL_MODE)	{
  		switch(FINKEN_POSITION_CONTROL_MODE) {
  			case 2:
@@ -290,7 +284,13 @@ void finken_system_model_periodic(void)
  		else if (error_py_p < -20.0f)
  			error_py_p = -20.0f;
  		finken_actuators_set_point.roll = error_py_p;//   error_py_d;
-  }
+  } else	{
+
+	finken_system_set_point.pitch = rcPitch;
+	finken_system_set_point.roll = rcRoll;
+
+	}
+
 	// TODO: Theta
 }
 

@@ -1,0 +1,4 @@
+tar ext /dev/ttyACM0
+mon tpwr enable
+mon swdp_scan
+att 1
