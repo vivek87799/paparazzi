@@ -263,11 +263,11 @@ void update_z(void) {
 // initialize kalman filter (initializer function for paparazzi)
 void kalman_init(void) {
 	// time and other constants
-	const fix16_t dt = fix16_div(fix16_one,fix16_from_float(15.0));		// time constant (paparazzi call frequency)
+	const fix16_t dt = fix16_div(fix16_one,fix16_from_float(KALMAN_PREDICTION_FREQ));		// time constant (paparazzi call frequency)
 	const fix16_t dt_2 = fix16_sq(dt);
 
 	// initialisation constants
-	m = fix16_from_float(0.380);							// set mass [kg]
+	m = fix16_from_float(KALMAN_MASS);						// set mass [kg]
 	fix16_t helper_const;									// varible to speed up matrix assignment
 
 	// this constants were declared to calculate the air resistance

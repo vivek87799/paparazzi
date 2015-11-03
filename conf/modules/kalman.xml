@@ -12,6 +12,8 @@
   <periodic fun="correct()" freq="15" />
   <makefile>
     <file name="kalman.c"/>
+        <!-- Definition to store prediction frequency. Please set it to the same value as freq of predict() -->
+        <define name="KALMAN_PREDICTION_FREQ"          value="15.0" />
 	<file name="/libfixkalman/fixkalman.c"/>
 	<file name="/libfixmatrix/fixmatrix.c"/>
 	<file name="/libfixmatrix/fixarray.c"/>

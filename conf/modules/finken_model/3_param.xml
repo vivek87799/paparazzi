@@ -9,4 +9,8 @@
 		<define name="HEIGHT_CONTROL_DELAY_TIME"  value="0.04" />
 		<define name="HEIGHT_CONTROL_FOLLOW_TIME" value="6"    />
 	</section>
+	<!-- Kalman filter -->
+	<section name="KALMAN" prefix="KALMAN_">
+		<define name="MASS"                       value="0.380" />
+	</section>
 </airframe>
