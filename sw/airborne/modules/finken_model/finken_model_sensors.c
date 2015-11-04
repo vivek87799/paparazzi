@@ -58,10 +58,10 @@ void finken_sensor_model_init(void)
 {
   i = 0;
   init = false;
-  frontBuf[0] = MAX_DIST;
-  leftBuf[0] = MAX_DIST;
-  backBuf[0] = MAX_DIST;
-  rightBuf[0] = MAX_DIST;
+  frontBuf[0] = maxDist;
+  leftBuf[0] = maxDist;
+  backBuf[0] = maxDist;
+  rightBuf[0] = maxDist;
   memset(&finken_sensor_model, 0, sizeof(struct sensor_model_s));
 
   register_periodic_telemetry(DefaultPeriodic, "FINKEN_SENSOR_MODEL", send_finken_sensor_model_telemetry);
