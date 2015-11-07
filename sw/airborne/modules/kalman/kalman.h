@@ -13,6 +13,8 @@
 #include "subsystems/datalink/telemetry.h"
 #include "modules/kalman/libfixmath/fix16.h"
 
+extern bool kalman_take_off;
+
 struct state_vector_kalman
 {
 	int32_t pos_x;

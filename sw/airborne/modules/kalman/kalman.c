@@ -17,6 +17,9 @@
 // last measurement time to compute time difference
 uint32_t last_time;
 
+bool kalman_take_off = false;
+bool kalman_radio_control = false;
+
 // struct to communicate results to other modules
 struct state_vector_kalman kalman_sv_pva;
 
@@ -117,6 +120,8 @@ void update_u(void) {
 	// ---------------- start of radio controller as control unit -------------
 	// ------------------------------------------------------------------------
 /*
+	kalman_radio_control = true;
+	
 	// controll data from controller
 	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (12236*180) * 20 * PI;
 	float beta = ((float) radio_control.values[RADIO_PITCH]) / (12236*180) * 20 * PI;
@@ -257,8 +262,9 @@ void update_z(void) {
 		fix16_mul(R12, acceleration_y)), fix16_mul(R13, acceleration_z));	// acc_x
 	z->data[7][0] = fix16_add(fix16_add(fix16_mul(R21, acceleration_x), 
 		fix16_mul(R22, acceleration_y)), fix16_mul(R23, acceleration_z));	// acc_y
-	z->data[8][0] = fix16_add(fix16_add(fix16_mul(R31, acceleration_x), 
-		fix16_mul(R32, acceleration_y)), fix16_mul(R33, acceleration_z));	// acc_z
+	z->data[8][0] = fix16_sub(fix16_add(fix16_add(fix16_mul(R31, acceleration_x), 
+		fix16_mul(R32, acceleration_y)), fix16_mul(R33, acceleration_z)),
+		fix16_from_float(9.81));	// acc_z
 
 	// update timestamp
 	last_time = now;
@@ -299,7 +305,7 @@ void kalman_init(void) {
 	mf16 *x = kalman_get_state_vector(&k_pva);
 
 	// initialize acceleration in z direction
-	matrix_set(x, 8, 0, fix16_from_float(9.81));
+	matrix_set(x, 8, 0, fix16_from_float(0.0));
 
 	// get system state transition model matrix from struct
 	mf16 *A = kalman_get_state_transition(&k_pva);
@@ -375,7 +381,7 @@ void kalman_init(void) {
 
 	matrix_set(P, 6, 6, fix16_from_float(0.01));
 	matrix_set(P, 7, 7, fix16_from_float(0.01));
-	matrix_set(P, 8, 8, fix16_from_float(0.1));
+	matrix_set(P, 8, 8, fix16_from_float(1.0));
 
 	// get square control input covariance matrix from struct
 	mf16 *Q = kalman_get_input_covariance(&k_pva);
@@ -454,15 +460,19 @@ extern void update_output(void) {
 
 // prediction step (periodic function call by paparazzi)
 extern void predict(void) {
-	update_u();
-	kalman_predict(&k_pva);
+	if(kalman_take_off || kalman_radio_control) {
+		update_u();
+		kalman_predict(&k_pva);
+	}
 }
 
 // correction step (periodic function call by paparazzi)
 extern void correct(void) {
-	update_z();
-	kalman_correct(&k_pva, &k_pva_m);
-	update_output();
+	if(kalman_take_off || kalman_radio_control) {
+		update_z();
+		kalman_correct(&k_pva, &k_pva_m);
+		update_output();
+	}
 }
 
 // telemetry
