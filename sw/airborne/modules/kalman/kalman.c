@@ -49,6 +49,7 @@ kalman16_observation_t k_pva_m;
 fix16_t m;
 
 float q1;
+float q2;
 
 // Error if fixmatrix library is not configured correctly (fixmatrix.h FIXMATRIX_MAX_SIZE)
 #ifndef FIXMATRIX_MAX_SIZE
@@ -182,6 +183,9 @@ void update_z(void) {
 	fix16_t alpha = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.phi));
 	fix16_t beta = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.theta));
 	//fix16_t theta = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.psi));
+
+	q1 = fix16_to_float(alpha);
+	q2 = fix16_to_float(beta);
 
 	// theta is permanently set to 0
 	fix16_t theta = 0;
@@ -413,9 +417,9 @@ void kalman_init(void) {
 	matrix_set(R, 3, 3, fix16_from_float(0.3));
 	matrix_set(R, 4, 4, fix16_from_float(0.3));
 	matrix_set(R, 5, 5, fix16_from_float(0.15));
-	matrix_set(R, 6, 6, fix16_from_float(1.95));
-	matrix_set(R, 7, 7, fix16_from_float(1.95));
-	matrix_set(R, 8, 8, fix16_from_float(1.95));
+	matrix_set(R, 6, 6, fix16_from_float(3.0));
+	matrix_set(R, 7, 7, fix16_from_float(3.0));
+	matrix_set(R, 8, 8, fix16_from_float(3.0));
 
 	// init timestamp
 	last_time = get_sys_time_msec();
@@ -430,56 +434,28 @@ void kalman_init(void) {
 extern void update_output(void) {
 	// get state vector from struct
 	mf16 *x = kalman_get_state_vector(&k_pva);
-	mf16 *P = kalman_get_system_covariance(&k_pva);
-
-	// declaration of variables
-	int8_t on_ground = 0;
-	float z, z_v;
-
-	// convert position and velocity in z direction to float
-	z= fix16_to_float(x->data[2][0]);
-	z_v = fix16_to_float(x->data[5][0]);
 
 	// positions (converted back to paparazzi format)
 	kalman_sv_pva.pos_x = POS_BFP_OF_REAL(fix16_to_float(x->data[0][0]));
 	kalman_sv_pva.pos_y = POS_BFP_OF_REAL(fix16_to_float(x->data[1][0]));
-
-	// do not fall below starting position
-	if (z > 0.0) {
-		kalman_sv_pva.pos_z = 0;
-		x->data[2][0] = 0;
-		P->data[2][2] = 0.01;
-		on_ground = 1;
-	}
-	else {
-		kalman_sv_pva.pos_z = POS_BFP_OF_REAL(fix16_to_float(x->data[2][0]));
-	}
+	kalman_sv_pva.pos_z = POS_BFP_OF_REAL(fix16_to_float(x->data[2][0]));
 
 	// velocity (converted back to paparazzi format)
 	kalman_sv_pva.vel_x = SPEED_BFP_OF_REAL(fix16_to_float(x->data[3][0]));
 	kalman_sv_pva.vel_y = SPEED_BFP_OF_REAL(fix16_to_float(x->data[4][0]));
-
-	// if already on ground set z-velocity 0:
-	if ((on_ground == 1) && (z_v > 0.0)) {
-		kalman_sv_pva.vel_z = 0;
-		x->data[5][0] = 0;
-		P->data[5][5] = 0.01;
-	}
-	else {
-		kalman_sv_pva.vel_z = SPEED_BFP_OF_REAL(fix16_to_float(x->data[5][0]));
-	}
+	kalman_sv_pva.vel_z = SPEED_BFP_OF_REAL(fix16_to_float(x->data[5][0]));
 
 	// acceleration (converted back to paparazzi format)
 	kalman_sv_pva.acc_x = ACCEL_BFP_OF_REAL(fix16_to_float(x->data[6][0]));
 	kalman_sv_pva.acc_y = ACCEL_BFP_OF_REAL(fix16_to_float(x->data[7][0]));
 	kalman_sv_pva.acc_z = ACCEL_BFP_OF_REAL(fix16_to_float(x->data[8][0]));
+
 }
 
 // prediction step (periodic function call by paparazzi)
 extern void predict(void) {
 	update_u();
 	kalman_predict(&k_pva);
-	update_output();
 }
 
 // correction step (periodic function call by paparazzi)
