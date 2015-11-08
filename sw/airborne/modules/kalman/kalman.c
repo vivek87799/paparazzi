@@ -51,9 +51,6 @@ kalman16_observation_t k_pva_m;
 // global variable for mass
 fix16_t m;
 
-float q1;
-float q2;
-
 // Error if fixmatrix library is not configured correctly (fixmatrix.h FIXMATRIX_MAX_SIZE)
 #ifndef FIXMATRIX_MAX_SIZE
 #error FIXMATRIX_MAX_SIZE must be defined and greater or equal to the number of states, inputs and measurements.
@@ -189,8 +186,13 @@ void update_z(void) {
 	fix16_t beta = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.theta));
 	//fix16_t theta = fix16_from_float(ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.psi));
 
-	q1 = fix16_to_float(alpha);
-	q2 = fix16_to_float(beta);
+	// handle dead zones
+	if (alpha<0.017453 && alpha>-0.017453) {
+		alpha = 0.0;
+	}
+	if (beta<0.017453 && beta>-0.017453) {
+		beta = 0.0;
+	}
 
 	// theta is permanently set to 0
 	fix16_t theta = 0;
@@ -375,12 +377,12 @@ void kalman_init(void) {
 	matrix_set(P, 1, 1, fix16_from_float(0.01));
 	matrix_set(P, 2, 2, fix16_from_float(0.01));
 
-	matrix_set(P, 3, 3, fix16_from_float(0.01));
-	matrix_set(P, 4, 4, fix16_from_float(0.01));
-	matrix_set(P, 5, 5, fix16_from_float(0.01));
+	matrix_set(P, 3, 3, fix16_from_float(0.1));
+	matrix_set(P, 4, 4, fix16_from_float(0.1));
+	matrix_set(P, 5, 5, fix16_from_float(0.1));
 
-	matrix_set(P, 6, 6, fix16_from_float(0.01));
-	matrix_set(P, 7, 7, fix16_from_float(0.01));
+	matrix_set(P, 6, 6, fix16_from_float(0.5));
+	matrix_set(P, 7, 7, fix16_from_float(0.5));
 	matrix_set(P, 8, 8, fix16_from_float(1.0));
 
 	// get square control input covariance matrix from struct
@@ -417,8 +419,8 @@ void kalman_init(void) {
 	mf16 *R = kalman_get_observation_process_noise(&k_pva_m);		// set observation error
 
 	// sensor uncertainty in the diagonal of the matrix
-	matrix_set(R, 0, 0, fix16_from_float(0.05));
-	matrix_set(R, 1, 1, fix16_from_float(0.05));	
+	matrix_set(R, 0, 0, fix16_from_float(0.5));
+	matrix_set(R, 1, 1, fix16_from_float(0.5));	
 	matrix_set(R, 2, 2, fix16_from_float(0.01));
 	matrix_set(R, 3, 3, fix16_from_float(0.3));
 	matrix_set(R, 4, 4, fix16_from_float(0.3));
