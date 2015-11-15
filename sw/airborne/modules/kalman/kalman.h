@@ -13,8 +13,10 @@
 #include "subsystems/datalink/telemetry.h"
 #include "modules/kalman/libfixmath/fix16.h"
 
+// variable to indicate take off of the copter
 extern bool kalman_take_off;
 
+// structure to communicate the results of the Kalman filter to other modules
 struct state_vector_kalman
 {
 	int32_t pos_x;
@@ -28,6 +30,7 @@ struct state_vector_kalman
 	int32_t acc_z;
 }; 
 
+// function definitions
 extern void update_u(void);
 extern void update_z(void);
 extern void kalman_init(void);

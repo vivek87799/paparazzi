@@ -17,6 +17,7 @@
 // last measurement time to compute time difference
 uint32_t last_time;
 
+// variables to delay start of the Kalman filter
 bool kalman_take_off = false;
 bool kalman_radio_control = false;
 
@@ -117,6 +118,7 @@ void update_u(void) {
 	// ---------------- start of radio controller as control unit -------------
 	// ------------------------------------------------------------------------
 /*
+	// start Kalman filter after copter init
 	kalman_radio_control = true;
 	
 	// controll data from controller
@@ -171,6 +173,7 @@ void update_u(void) {
 
 // update observation vector
 void update_z(void) {
+	// get observation vector
 	mf16 *z = kalman_get_observation_vector(&k_pva_m);
 
 	// const to reduce computation
@@ -229,10 +232,6 @@ void update_z(void) {
 	fix16_t velocity_y = fix16_from_float(SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y));
 	fix16_t position_z = fix16_from_float(POS_FLOAT_OF_BFP(finken_sensor_model.pos.z));
 
-	// scaling because of flow sensor (16/4.6)
-	//velocity_x = fix16_mul(velocity_x, fix16_from_float(3.47826087));
-	//velocity_y = fix16_mul(velocity_y, fix16_from_float(3.47826087));
-
 	// compute system variables from flow sensor in z direction
 	position_z = fix16_mul(fix16_mul(R33, position_z), fix16_from_float(-1.0));
 	fix16_t velocity_z = fix16_div(fix16_sub(position_z, z->data[2][0]), diff);
@@ -281,15 +280,6 @@ void kalman_init(void) {
 	// initialisation constants
 	m = fix16_from_float(KALMAN_MASS);						// set mass [kg]
 	fix16_t helper_const;									// varible to speed up matrix assignment
-
-	// this constants were declared to calculate the air resistance
-	// but they were removed because of linearisation
-	// but they can be useful in the future
-	// ------------------------------------------------------------------------ 
-	//const fix16_t c = fix16_from_float(0.95);				// c = 0.95 --> ~ as it would be a plane surface
-	//const fix16_t A1 = fix16_from_float(0.03947);			// A_x,y = 27.5*27.5 and 12*27,5 rotated with 5 degrees ~ 0.03947
-	//const fix16_t A2 = fix16_from_float(0.075625);		// A_z = 27.5*27.5 cm --> maximal distance between endpoints of the rotors
-	// ------------------------------------------------------------------------
 	
 	// init output struct
 	kalman_sv_init();
@@ -306,13 +296,11 @@ void kalman_init(void) {
 	// get state vector from struct
 	mf16 *x = kalman_get_state_vector(&k_pva);
 
-	// initialize acceleration in z direction
-	matrix_set(x, 8, 0, fix16_from_float(0.0));
-
 	// get system state transition model matrix from struct
 	mf16 *A = kalman_get_state_transition(&k_pva);
 	
-	// s_i(t) = s_i(t-1) + v_i(t-1)*dt + a_i(t-1)*(dt^2)/2
+	// s_i(t) = s_i(t-1) + v_i(t-1)*dt + [(1/m)*F_i(t-1)*(dt^2)/2]
+	// third term in matrix B
 	matrix_set(A, 0, 0, fix16_one);
 	matrix_set(A, 0, 3, dt);
 
@@ -322,48 +310,33 @@ void kalman_init(void) {
 	matrix_set(A, 2, 2, fix16_one);
 	matrix_set(A, 2, 5, dt);
 
-	// v_i(t) = v_i(t-1) + a_i(t-1)*dt
+	// v_i(t) = v_i(t-1) + [(1/m)*F_i(t-1)*dt]
+	// second term in matrix B
 	matrix_set(A, 3, 3, fix16_one);
 
 	matrix_set(A, 4, 4, fix16_one);
 
 	matrix_set(A, 5, 5, fix16_one);
 
-	// this linearistaion was not working (can be useful in the future)
-	// ------------------------------------------------------------------------
-	// linear approximation of air resistance
-	// F_r = 0.5*rho*c*A*v^2
-	// a_r' = (rho/m)*c*A*v
-	// air density = 1.225 kg/m^3
-	// helper_const = fix16_mul(fix16_div(fix16_from_float(1225.0), m), fix16_mul(c, A1));
-	// ------------------------------------------------------------------------
-
-	// air resistance
-	// linearised using 0 and maximal allowed speed to a given mass
-	// a_i(t) = -c*v(t-1) + [1/m*F_i(t-1)]
-	// second part is in the B matrix
-	//matrix_set(A, 6, 3, fix16_from_float(-1.614));
-
-	//matrix_set(A, 7, 4, fix16_from_float(-1.614));
-
-	//matrix_set(A, 8, 5, fix16_from_float(-1.614));
-
 
 	// get control input model matrix from struct
 	mf16 *B = kalman_get_input_transition(&k_pva);
 
+	// s_i(t) = [s_i(t-1) + v_i(t-1)*dt] + (1/m)*F_i(t-1)*(dt^2)/2
+	// first two terms in matrix A
 	helper_const = fix16_div(fix16_div(dt_2, fix16_from_float(2.0)), m);
 	matrix_set(B, 0, 0, helper_const);
 	matrix_set(B, 1, 1, helper_const);
 	matrix_set(B, 2, 2, helper_const);
 
+	// v_i(t) = [v_i(t-1)] + (1/m)*F_i(t-1)*dt
+	// first term in matrix A
 	helper_const = fix16_div(dt, m);
 	matrix_set(B, 3, 0, helper_const);
 	matrix_set(B, 4, 1, helper_const);
 	matrix_set(B, 5, 2, helper_const);
 
-	// a_i(t) = [-c*v(t-1)] + 1/m*F_i(t-1)
-	// first part is in the A matrix
+	// a_i(t) = (1/m)*F_i(t-1)
 	helper_const = fix16_div(fix16_one, m);
 	matrix_set(B, 6, 0, helper_const);
 	matrix_set(B, 7, 1, helper_const);
@@ -372,7 +345,7 @@ void kalman_init(void) {
 	// get square system state covariance matrix from struct
 	mf16 *P = kalman_get_system_covariance(&k_pva);
 
-	// prediction covarience
+	// prediction covarience initialization
 	matrix_set(P, 0, 0, fix16_from_float(0.01));
 	matrix_set(P, 1, 1, fix16_from_float(0.01));
 	matrix_set(P, 2, 2, fix16_from_float(0.01));
@@ -386,11 +359,9 @@ void kalman_init(void) {
 	matrix_set(P, 8, 8, fix16_from_float(1.0));
 
 	// get square control input covariance matrix from struct
-	mf16 *Q = kalman_get_input_covariance(&k_pva);
+	mf16 *Q = kalman_get_input_covariance(&k_pva);					// set prediction error
 
-	// Q is defined in most of the literature as Q = B S (B^T)
-	// where S contains the noise
-	// here Q = S
+	// prediction uncertainty
 	matrix_set(Q, 0, 0, fix16_from_float(0.5));
 	matrix_set(Q, 1, 1, fix16_from_float(0.5));
 	matrix_set(Q, 2, 2, fix16_from_float(1.0));
@@ -462,6 +433,7 @@ extern void update_output(void) {
 
 // prediction step (periodic function call by paparazzi)
 extern void predict(void) {
+	// runs only if filter is already activated
 	if(kalman_take_off || kalman_radio_control) {
 		update_u();
 		kalman_predict(&k_pva);
@@ -470,6 +442,7 @@ extern void predict(void) {
 
 // correction step (periodic function call by paparazzi)
 extern void correct(void) {
+	// runs only if filter is already activated
 	if(kalman_take_off || kalman_radio_control) {
 		update_z();
 		kalman_correct(&k_pva, &k_pva_m);
