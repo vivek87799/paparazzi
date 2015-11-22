@@ -56,6 +56,7 @@ void finken_sensor_model_periodic(void)
 {
   // current timestamp
   uint32_t now_ms = get_sys_time_msec();
+  uint32_t dt = now_ms - last_ts;
 
 #ifdef USE_FLOW
 	float newZ = optical_flow.ground_distance;
@@ -78,7 +79,9 @@ void finken_sensor_model_periodic(void)
 #endif
 
 	if(newZ < maxZ && newZ > minZ){
-  	finken_sensor_model.pos.z            = POS_BFP_OF_REAL(newZ);
+        temp_mult                        = (((int64_t)(POS_BFP_OF_REAL(newZ) - finken_sensor_model.pos.z)) * (1<<11)) / dt;
+        finken_sensor_model.velocity.z   = temp_mult * 1000;
+        finken_sensor_model.pos.z        = POS_BFP_OF_REAL(newZ);
 	}
 
 	memcpy(&finken_sensor_model.attitude, stateGetNedToBodyQuat_i(), sizeof(struct Int32Quat));
@@ -92,10 +95,10 @@ void finken_sensor_model_periodic(void)
 
 	if (now_ms > last_ts) {
 		//fraction for position: 8, for speed 19 --> difference is 11
-		temp_mult = (((int64_t)finken_sensor_model.velocity.x / (1<<11)) * (now_ms - last_ts));
+		temp_mult = (((int64_t)finken_sensor_model.velocity.x / (1<<11)) * dt);
 		finken_sensor_model.pos.x += ((temp_mult / 1000));
 
-		temp_mult = (((int64_t)finken_sensor_model.velocity.y) * (now_ms - last_ts)) / (1<<11);
+		temp_mult = (((int64_t)finken_sensor_model.velocity.y / (1<<11)) * dt);
 		finken_sensor_model.pos.y += ((temp_mult / 1000));
 
 		last_ts = now_ms;
@@ -110,19 +113,19 @@ void send_finken_sensor_model_telemetry(struct transport_tx *trans, struct link_
 
 	float pos_x      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.x);
 	float pos_y      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.y);
-	float pos_z      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
+	float pos_z      = -POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
 	float pos_pitch  = ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.theta);
 	float pos_roll   = ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.phi);
 	float pos_yaw    = ANGLE_FLOAT_OF_BFP(finken_sensor_attitude.psi);
 	float velocity_x = SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x);
 	float velocity_y = SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y);
-	float velocity_z = SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.z);
+	float velocity_z = -SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.z);
 	float rate_pitch = RATE_FLOAT_OF_BFP(finken_sensor_model.rates.p);
 	float rate_roll  = RATE_FLOAT_OF_BFP(finken_sensor_model.rates.q);
 	float rate_yaw   = RATE_FLOAT_OF_BFP(finken_sensor_model.rates.r);
 	float accel_x    = ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.x);
 	float accel_y    = ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.y);
-	float accel_z    = ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.z);
+	float accel_z    = ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.z-ACCEL_BFP_OF_REAL(9.81));
 
   DOWNLINK_SEND_FINKEN_SENSOR_MODEL(
     DefaultChannel,

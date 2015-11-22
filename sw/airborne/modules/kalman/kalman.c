@@ -294,7 +294,7 @@ void kalman_init(void) {
 	helper_const = fix16_div(dt_2, fix16_from_float(2.0));
 
 	// get state vector from struct
-	mf16 *x = kalman_get_state_vector(&k_pva);
+	//mf16 *x = kalman_get_state_vector(&k_pva);
 
 	// get system state transition model matrix from struct
 	mf16 *A = kalman_get_state_transition(&k_pva);
@@ -346,27 +346,27 @@ void kalman_init(void) {
 	mf16 *P = kalman_get_system_covariance(&k_pva);
 
 	// prediction covarience initialization
-	matrix_set(P, 0, 0, fix16_from_float(0.01));
-	matrix_set(P, 1, 1, fix16_from_float(0.01));
-	matrix_set(P, 2, 2, fix16_from_float(0.01));
+	matrix_set(P, 0, 0, fix16_from_float(0.1));
+	matrix_set(P, 1, 1, fix16_from_float(0.1));
+	matrix_set(P, 2, 2, fix16_from_float(0.1));
 
 	matrix_set(P, 3, 3, fix16_from_float(0.1));
 	matrix_set(P, 4, 4, fix16_from_float(0.1));
 	matrix_set(P, 5, 5, fix16_from_float(0.1));
 
-	matrix_set(P, 6, 6, fix16_from_float(0.5));
-	matrix_set(P, 7, 7, fix16_from_float(0.5));
+	matrix_set(P, 6, 6, fix16_from_float(1.0));
+	matrix_set(P, 7, 7, fix16_from_float(1.0));
 	matrix_set(P, 8, 8, fix16_from_float(1.0));
 
 	// get square control input covariance matrix from struct
 	mf16 *Q = kalman_get_input_covariance(&k_pva);					// set prediction error
 
 	// prediction uncertainty
-	matrix_set(Q, 0, 0, fix16_from_float(0.5));
-	matrix_set(Q, 1, 1, fix16_from_float(0.5));
+	matrix_set(Q, 0, 0, fix16_from_float(0.05));
+	matrix_set(Q, 1, 1, fix16_from_float(0.05));
 	matrix_set(Q, 2, 2, fix16_from_float(1.0));
-	matrix_set(Q, 3, 3, fix16_from_float(0.5));
-	matrix_set(Q, 4, 4, fix16_from_float(0.5));
+	matrix_set(Q, 3, 3, fix16_from_float(0.75));
+	matrix_set(Q, 4, 4, fix16_from_float(0.75));
 	matrix_set(Q, 5, 5, fix16_from_float(1.0));
 	matrix_set(Q, 6, 6, fix16_from_float(1.0));
 	matrix_set(Q, 7, 7, fix16_from_float(1.0));
@@ -390,12 +390,12 @@ void kalman_init(void) {
 	mf16 *R = kalman_get_observation_process_noise(&k_pva_m);		// set observation error
 
 	// sensor uncertainty in the diagonal of the matrix
-	matrix_set(R, 0, 0, fix16_from_float(0.5));
-	matrix_set(R, 1, 1, fix16_from_float(0.5));	
-	matrix_set(R, 2, 2, fix16_from_float(0.01));
-	matrix_set(R, 3, 3, fix16_from_float(0.3));
-	matrix_set(R, 4, 4, fix16_from_float(0.3));
-	matrix_set(R, 5, 5, fix16_from_float(0.15));
+	matrix_set(R, 0, 0, fix16_from_float(0.05));
+	matrix_set(R, 1, 1, fix16_from_float(0.05));	
+	matrix_set(R, 2, 2, fix16_from_float(0.1));
+	matrix_set(R, 3, 3, fix16_from_float(0.65));
+	matrix_set(R, 4, 4, fix16_from_float(0.65));
+	matrix_set(R, 5, 5, fix16_from_float(1.0));
 	matrix_set(R, 6, 6, fix16_from_float(3.0));
 	matrix_set(R, 7, 7, fix16_from_float(3.0));
 	matrix_set(R, 8, 8, fix16_from_float(3.0));
