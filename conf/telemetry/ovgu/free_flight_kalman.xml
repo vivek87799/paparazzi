@@ -8,7 +8,7 @@
       <message name="FINKEN_SENSOR_MODEL"      period="0.2" />
 	 <!--		<message name="FINKEN_SYSTEM_MODEL"      period="3" />-->
       <!--<message name="FINKEN_SYSTEM_SET_POINT"      period="3" />-->
-      <!--<message name="FINKEN_ACTUATORS_MODEL"   period="3" />-->
+      <message name="FINKEN_ACTUATORS_MODEL"   period="0.2" />
       <!--<message name="DL_VALUE"                 period="3"/>-->
       <!--<message name="ROTORCRAFT_STATUS"        period="2"/>-->
       <!--<message name="ROTORCRAFT_FP"            period="1"/>-->

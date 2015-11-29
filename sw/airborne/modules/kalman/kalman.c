@@ -191,10 +191,10 @@ void update_z(void) {
 
 	// handle dead zones
 	if (alpha<0.017453 && alpha>-0.017453) {
-		alpha = 0.0;
+		alpha = 0;
 	}
 	if (beta<0.017453 && beta>-0.017453) {
-		beta = 0.0;
+		beta = 0;
 	}
 
 	// theta is permanently set to 0
