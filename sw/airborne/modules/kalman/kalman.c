@@ -30,16 +30,15 @@ struct state_vector_kalman kalman_sv_pva;
 #define FIXMATH_SIN_LUT
 
 // disable uncontrolled functions for the kalman filter library
-#define KALMAN_DISABLE_UC
+#define KALMAN_DISABLE_C
 #define KALMAN_DISABLE_LAMBDA
 
 // create the filter structure
 #define K_NAME K_PVA
 #define K_NUM_S 9
-#define K_NUM_I 3
 
 // structs of kalman filter (controlled)
-kalman16_t k_pva;
+kalman16_uc_t k_pva;
 kalman16_observation_t k_pva_m;
 
 // create the measurement structure
@@ -76,99 +75,6 @@ void kalman_sv_init(void) {
 
 	// telemetry
 	register_periodic_telemetry(DefaultPeriodic, "KALMAN", send_kalman_telemetry);
-}
-
-// update input vector
-void update_u(void) {
-	mf16 *u = kalman_get_input_vector(&k_pva);
-
-	// get controll data from finken model
-	// Roll --> alpha
-	// Pitch --> beta
-	// Yaw --> theta
-
-	// ------------------------------------------------------------------------
-	// ------------------- start of autopilot as control unit -----------------
-	// ------------------------------------------------------------------------
-
-	// controll data from autopilot
-	float alpha = (finken_actuators_model.roll / 180.0) * PI;
-	float beta = (finken_actuators_model.pitch / 180.0) * PI;
-	// float theta = finken_actuators_model.yaw; // [rad/s] winkelgeschwindigkeit
-
-	// theta is permanently set to 0
-	float theta = 0.0;
-
-	// keep compiler happy
-	float throttle;
-
-	// waiting for heigth controller
-	if(finken_system_model_control_height==0) {
-		throttle = 0.0;
-	}
-	else {
-		throttle = finken_actuators_set_point.thrust * 100;
-	}
-
-	// ------------------------------------------------------------------------
-	// -------------------- end of autopilot as control unit ------------------
-	// ------------------------------------------------------------------------
-
-	// ------------------------------------------------------------------------
-	// ---------------- start of radio controller as control unit -------------
-	// ------------------------------------------------------------------------
-/*
-	// start Kalman filter after copter init
-	kalman_radio_control = true;
-	
-	// controll data from controller
-	float alpha = ((float) radio_control.values[RADIO_ROLL]) / (12236*180) * 20 * PI;
-	float beta = ((float) radio_control.values[RADIO_PITCH]) / (12236*180) * 20 * PI;
-	//float theta = ((float) radio_control.values[RADIO_YAW]) / (12236*180) * 90 * PI;
-
-	// theta is permanently set to 0
-	//float theta = 0.0;
-
-	// correction to 0 with 1318
-	float throttle = (((float)radio_control.values[RADIO_THROTTLE]) + 1318.0) / 12236.0 * 100;
-	q1 = (float)radio_control.values[RADIO_THROTTLE];
-
-	// handle controller spezified dead zones
-	if (alpha<0.017453 && alpha>-0.017453) {
-		alpha = 0.0;
-	}
-	if (beta<0.017453 && beta>-0.017453) {
-		beta = 0.0;
-	}
-*/
-	// ------------------------------------------------------------------------
-	// ----------------- end of radio controller as control unit --------------
-	// ------------------------------------------------------------------------
-
-	// trigonometric variables to reduce future computations
-	fix16_t alpha_sin = fix16_sin(fix16_from_float(alpha));
-	fix16_t alpha_cos = fix16_cos(fix16_from_float(alpha));
-
-	fix16_t beta_sin = fix16_sin(fix16_from_float(beta));
-	fix16_t beta_cos = fix16_cos(fix16_from_float(beta));
-
-	//fix16_t theta_sin = fix16_sin(fix16_from_float(theta));
-	//fix16_t theta_cos = fix16_cos(fix16_from_float(theta));
-
-	fix16_t thrust = fix16_from_float(throttle);
-
-	// Conversionsfunction from Christoph: thrust[g] = 0.01514x^2 + 0.65268x [% --> gramm] corresponding to 4 motors converted to kg
-	fix16_t thrust_converted = fix16_div(fix16_mul(fix16_add(fix16_mul(fix16_from_float(0.01514), fix16_mul(thrust, thrust)),
-		fix16_mul(fix16_from_float(0.65268), thrust)), fix16_from_float(4.0)), fix16_from_float(1000.0));
-
-	// convert to force
-	thrust_converted = fix16_mul(thrust_converted, fix16_from_float(9.81));
-
-	// decompore thrust vector to global acceleration vectors and update input vector
-	u->data[0][0] = fix16_mul(fix16_mul(beta_sin, fix16_from_float(-1.0)), thrust_converted);	// Thrust in X-Direction	
-	u->data[1][0] = fix16_mul(fix16_mul(alpha_sin, beta_cos), thrust_converted);	// Thrust in Y-Direction
-	u->data[2][0] = fix16_sub(fix16_mul(m, fix16_from_float(9.81)), 
-		fix16_mul(fix16_mul(beta_cos, alpha_cos), thrust_converted));	// Thrust in Z-Direction
 }
 
 // update observation vector
@@ -285,7 +191,7 @@ void kalman_init(void) {
 	kalman_sv_init();
 
 	// init filter
-	kalman_filter_initialize(&k_pva, K_NUM_S, K_NUM_I);
+	kalman_filter_initialize_uc(&k_pva, K_NUM_S);
 
 	// init observation
 	kalman_observation_initialize(&k_pva_m, K_NUM_S, K_NUM_MEAS);
@@ -297,53 +203,41 @@ void kalman_init(void) {
 	//mf16 *x = kalman_get_state_vector(&k_pva);
 
 	// get system state transition model matrix from struct
-	mf16 *A = kalman_get_state_transition(&k_pva);
+	mf16 *A = kalman_get_state_transition_uc(&k_pva);
 	
-	// s_i(t) = s_i(t-1) + v_i(t-1)*dt + [(1/m)*F_i(t-1)*(dt^2)/2]
-	// third term in matrix B
+	// s_i(t) = s_i(t-1) + v_i(t-1)*dt + a_i(t-1)*(dt^2)/2
+	helper_const = fix16_div(dt_2, fix16_from_float(2.0));
 	matrix_set(A, 0, 0, fix16_one);
 	matrix_set(A, 0, 3, dt);
+	matrix_set(A, 0, 6, helper_const);
 
 	matrix_set(A, 1, 1, fix16_one);
 	matrix_set(A, 1, 4, dt);
+	matrix_set(A, 1, 7, helper_const);
 	
 	matrix_set(A, 2, 2, fix16_one);
 	matrix_set(A, 2, 5, dt);
+	matrix_set(A, 2, 8, helper_const);
 
-	// v_i(t) = v_i(t-1) + [(1/m)*F_i(t-1)*dt]
-	// second term in matrix B
+	// v_i(t) = v_i(t-1) + a_i(t-1)*dt
 	matrix_set(A, 3, 3, fix16_one);
+	matrix_set(A, 3, 6, dt);
 
 	matrix_set(A, 4, 4, fix16_one);
+	matrix_set(A, 4, 7, dt);
 
 	matrix_set(A, 5, 5, fix16_one);
+	matrix_set(A, 5, 8, dt);
 
+	// a_i(t) = a_i(t-1)
+	matrix_set(A, 6, 6, fix16_one);
 
-	// get control input model matrix from struct
-	mf16 *B = kalman_get_input_transition(&k_pva);
+	matrix_set(A, 7, 7, fix16_one);
 
-	// s_i(t) = [s_i(t-1) + v_i(t-1)*dt] + (1/m)*F_i(t-1)*(dt^2)/2
-	// first two terms in matrix A
-	helper_const = fix16_div(fix16_div(dt_2, fix16_from_float(2.0)), m);
-	matrix_set(B, 0, 0, helper_const);
-	matrix_set(B, 1, 1, helper_const);
-	matrix_set(B, 2, 2, helper_const);
-
-	// v_i(t) = [v_i(t-1)] + (1/m)*F_i(t-1)*dt
-	// first term in matrix A
-	helper_const = fix16_div(dt, m);
-	matrix_set(B, 3, 0, helper_const);
-	matrix_set(B, 4, 1, helper_const);
-	matrix_set(B, 5, 2, helper_const);
-
-	// a_i(t) = (1/m)*F_i(t-1)
-	helper_const = fix16_div(fix16_one, m);
-	matrix_set(B, 6, 0, helper_const);
-	matrix_set(B, 7, 1, helper_const);
-	matrix_set(B, 8, 2, helper_const);
+	matrix_set(A, 8, 8, fix16_one);
 
 	// get square system state covariance matrix from struct
-	mf16 *P = kalman_get_system_covariance(&k_pva);
+	mf16 *P = kalman_get_system_covariance_uc(&k_pva);
 
 	// prediction covarience initialization
 	matrix_set(P, 0, 0, fix16_from_float(0.1));
@@ -359,7 +253,7 @@ void kalman_init(void) {
 	matrix_set(P, 8, 8, fix16_from_float(1.0));
 
 	// get square control input covariance matrix from struct
-	mf16 *Q = kalman_get_input_covariance(&k_pva);					// set prediction error
+	mf16 *Q = kalman_get_system_process_noise_uc(&k_pva);					// set prediction error
 
 	// prediction uncertainty
 	matrix_set(Q, 0, 0, fix16_from_float(0.05));
@@ -404,7 +298,6 @@ void kalman_init(void) {
 	last_time = get_sys_time_msec();
 
 	// init u, z vectors and output structure
-	update_u();
 	update_z();
 	update_output();
 }
@@ -412,7 +305,7 @@ void kalman_init(void) {
 // update output structure
 extern void update_output(void) {
 	// get state vector from struct
-	mf16 *x = kalman_get_state_vector(&k_pva);
+	mf16 *x = kalman_get_state_vector_uc(&k_pva);
 
 	// positions (converted back to paparazzi format)
 	kalman_sv_pva.pos_x = POS_BFP_OF_REAL(fix16_to_float(x->data[0][0]));
@@ -435,8 +328,7 @@ extern void update_output(void) {
 extern void predict(void) {
 	// runs only if filter is already activated
 	if(kalman_take_off || kalman_radio_control) {
-		update_u();
-		kalman_predict(&k_pva);
+		kalman_predict_uc(&k_pva);
 	}
 }
 
@@ -445,7 +337,7 @@ extern void correct(void) {
 	// runs only if filter is already activated
 	if(kalman_take_off || kalman_radio_control) {
 		update_z();
-		kalman_correct(&k_pva, &k_pva_m);
+		kalman_correct_uc(&k_pva, &k_pva_m);
 		update_output();
 	}
 }

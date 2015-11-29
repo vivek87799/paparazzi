@@ -9,7 +9,7 @@
 /* numerical stability. Please be aware that this form of the covariance   */
 /* update equation is computationally more expensive.                      */
 /* ----------------------------------------------------------------------- */
-#define KALMAN_JOSEPH_FORM
+//#define KALMAN_JOSEPH_FORM
 
 /* ----------------------------------------------------------------------- */
 /* Transforms the square system process noise matrix into square contol    */
@@ -24,6 +24,6 @@
 /* In this case the covariance prediction step looks like:                 */
 /* P = A*P*A' + B*Q*B'                                                     */  
 /* ----------------------------------------------------------------------- */
-//#define KALMAN_TIME_VARYING
+#define KALMAN_TIME_VARYING
 
 #endif
