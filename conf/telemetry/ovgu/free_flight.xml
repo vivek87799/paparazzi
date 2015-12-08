@@ -21,7 +21,7 @@
       <message name="ROTORCRAFT_STATUS"        period="3"/>
       <message name="ALIVE"                    period="3"/>
       <message name="ROTORCRAFT_NAV_STATUS"    period="3"/>
-
+      <message name="RC"            	       period="3"/>
 		</mode>
 		<mode name="extended">
       <message name="FINKEN_SENSOR_MODEL"      period="2.0" />
