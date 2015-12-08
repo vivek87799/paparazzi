@@ -13,7 +13,7 @@
 	<blocks>
 		<block name="default">
 			<set value="0" var="finken_system_model_control_height"/> 
-			<attitude pitch="0.0" roll="0.0" throttle="0.0" until="stage_time > 10" vmode="throttle" />
+			<attitude pitch="0.0" roll="0.0" throttle="0.0" until="stage_time > 40" vmode="throttle" />
 			<deroute block="inair"/>
 		</block>
 
