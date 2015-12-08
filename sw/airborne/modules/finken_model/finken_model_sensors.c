@@ -31,11 +31,11 @@
 #include "subsystems/imu.h"
 #include "modules/sensor_filter/sensor_filter.h"
 
-#ifdef USE_FLOW
+//#ifdef USE_FLOW
 	#include "modules/optical_flow/px4flow.h"
-#else
+//#else
 	#include "modules/finken_ir_adc/finken_ir_adc.h"
-#endif
+//#endif
 
 struct sensor_model_s finken_sensor_model;
 int64_t temp_mult;
@@ -57,11 +57,12 @@ void finken_sensor_model_periodic(void)
   // current timestamp
   uint32_t now_ms = get_sys_time_msec();
 
-#ifdef USE_FLOW
+/*#ifdef USE_FLOW
 	float newZ = optical_flow.ground_distance;
 #else
 	float newZ = ir_distance;
-#endif
+#endif*/
+	float newZ = ir_distance;
 
   memcpy(&finken_sensor_model.rates, &imu.gyro, sizeof(struct Int32Rates));
 	/* x = y and y = x because of the coord. transformation from sensor to body coord. system */
