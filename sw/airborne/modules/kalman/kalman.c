@@ -388,11 +388,11 @@ void kalman_init(void) {
 
 	matrix_set(Q_x, 1, 1, fix16_from_float(0.75));
 	matrix_set(Q_y, 1, 1, fix16_from_float(0.75));
-	matrix_set(Q_z, 1, 1, fix16_from_float(1.0));
+	matrix_set(Q_z, 1, 1, fix16_from_float(5.00));
 
 	matrix_set(Q_x, 2, 2, fix16_from_float(1.0));
 	matrix_set(Q_y, 2, 2, fix16_from_float(1.0));
-	matrix_set(Q_z, 2, 2, fix16_from_float(1.0));
+	matrix_set(Q_z, 2, 2, fix16_from_float(2.0));
 
 	// get observation model matrix from struct
 	mf16 *H_x = kalman_get_observation_transformation(&k_pva_m_x);
@@ -424,11 +424,11 @@ void kalman_init(void) {
 
 	matrix_set(R_x, 1, 1, fix16_from_float(0.65));
 	matrix_set(R_y, 1, 1, fix16_from_float(0.65));
-	matrix_set(R_z, 1, 1, fix16_from_float(1.0));
+	matrix_set(R_z, 1, 1, fix16_from_float(0.5));
 
 	matrix_set(R_x, 2, 2, fix16_from_float(3.0));
 	matrix_set(R_y, 2, 2, fix16_from_float(3.0));
-	matrix_set(R_z, 2, 2, fix16_from_float(3.0));
+	matrix_set(R_z, 2, 2, fix16_from_float(3.5));
 
 	// init timestamp
 	last_time = get_sys_time_msec();
