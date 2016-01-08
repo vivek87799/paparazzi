@@ -24,7 +24,7 @@
 
 /* input */
 #ifdef USE_SONAR_TOWER
-#include "modules/sonar/sonar_array_i2c.h"
+#include "finken_sonar_filter.h"
 #endif
 
 #include "state.h"
@@ -37,31 +37,15 @@
 	#include "modules/finken_ir_adc/finken_ir_adc.h"
 #endif
 
-#define BufSize 5
-
 struct sensor_model_s finken_sensor_model;
 int64_t temp_mult;
 uint32_t last_ts;
 
 static const float maxZ    = FINKEN_MAX_Z;
 static const float minZ    = FINKEN_MIN_Z;
-static const float maxDist = FINKEN_MAX_DIST;
-static const float minDist = FINKEN_MIN_DIST;
 
-static float frontBuf[BufSize];
-static float backBuf[BufSize];
-static float leftBuf[BufSize];
-static float rightBuf[BufSize];
-static int i;
-static bool init;
 void finken_sensor_model_init(void)
 {
-  i = 0;
-  init = false;
-  frontBuf[0] = maxDist;
-  leftBuf[0] = maxDist;
-  backBuf[0] = maxDist;
-  rightBuf[0] = maxDist;
   memset(&finken_sensor_model, 0, sizeof(struct sensor_model_s));
 
   register_periodic_telemetry(DefaultPeriodic, "FINKEN_SENSOR_MODEL", send_finken_sensor_model_telemetry);
@@ -86,51 +70,20 @@ void finken_sensor_model_periodic(void)
 	finken_sensor_model.acceleration.z = sensor_filtered.acceleration.z;
   memcpy(&finken_sensor_model.acceleration, &imu.accel, sizeof(struct Int32Vect3));
 
-#ifdef  USE_SONAR_TOWER
-	int newI = (i+1)%BufSize;
-	if( sonar_values.front < maxDist &&  sonar_values.front > minDist)
-		frontBuf[newI] = sonar_values.front;
-	else
-		frontBuf[newI] = frontBuf[i];
-
-	if( sonar_values.back < maxDist &&  sonar_values.back > minDist)
-		backBuf[newI] = sonar_values.back;
-	else
-		backBuf[newI] = backBuf[i];
-
-	if( sonar_values.left < maxDist &&  sonar_values.left > minDist)
-		leftBuf[newI] = sonar_values.left;
-	else
-		leftBuf[newI] = leftBuf[i];
-
-	if( sonar_values.right < maxDist &&  sonar_values.right > minDist)
-		rightBuf[newI] = sonar_values.right;
-	else
-		rightBuf[newI] = rightBuf[i];
-
-	if(init) {
-		int j;
-		finken_sensor_model.distance_d_front = 0;
-		finken_sensor_model.distance_d_back = 0;
-		finken_sensor_model.distance_d_left = 0;
-		finken_sensor_model.distance_d_right = 0;
-		for(j=0;j<BufSize;j++)	{
-			finken_sensor_model.distance_d_front += frontBuf[j];
-			finken_sensor_model.distance_d_back  += backBuf[j];
-			finken_sensor_model.distance_d_left  += leftBuf[j];
-			finken_sensor_model.distance_d_right += rightBuf[j];
-		}
-		finken_sensor_model.distance_d_front /= BufSize;
-		finken_sensor_model.distance_d_back  /= BufSize;
-		finken_sensor_model.distance_d_left  /= BufSize;
-		finken_sensor_model.distance_d_right /= BufSize;
-	} else if(newI==0)
-		init = true;
-	i = newI;
+#ifdef USE_SONAR_TOWER
+	sonar_values.front = sonar_filtered_values.front;
+	sonar_values.right = sonar_filtered_values.right;
+	sonar_values.back  = sonar_filtered_values.back;
+	sonar_values.left  = sonar_filtered_values.left;
+#else
+	sonar_values.front = FINKEN_MAX_SONAR_DIST;
+	sonar_values.right = FINKEN_MAX_SONAR_DIST;
+	sonar_values.back  = FINKEN_MAX_SONAR_DIST;
+	sonar_values.left  = FINKEN_MAX_SONAR_DIST;
 #endif
 
-	if(newZ < maxZ && newZ > minZ){
-  	finken_sensor_model.pos.z            = POS_BFP_OF_REAL(newZ);
+	if(newZ < FINKEN_MAX_Z && newZ > FINKEN_MIN_Z){
+  	finken_sensor_model.pos.z = POS_BFP_OF_REAL(newZ);
 	}
 
 	memcpy(&finken_sensor_model.attitude, stateGetNedToBodyQuat_i(), sizeof(struct Int32Quat));
@@ -169,6 +122,7 @@ void send_finken_hc_debug(struct transport_tx *trans, struct link_device* link) 
 void send_finken_sensor_model_telemetry(struct transport_tx *trans, struct link_device* link) {
   trans=trans;
   link=link;
+	int16_t distance_diff_x = 0, distance_diff_y = 0;
 	struct Int32Eulers attitude;
 	int32_eulers_of_quat(&attitude, &finken_sensor_model.attitude);
 
@@ -195,6 +149,7 @@ void send_finken_sensor_model_telemetry(struct transport_tx *trans, struct link_
     &finken_sensor_model.distance_d_right,
     &finken_sensor_model.distance_d_left,
     &finken_sensor_model.distance_d_back,
+		&distance_diff_x, & distance_diff_y,
     &pos_x,      &pos_y,      &pos_z,
     &pos_pitch,  &pos_roll,   &pos_yaw,
     &velocity_x, &velocity_y, &velocity_z,
