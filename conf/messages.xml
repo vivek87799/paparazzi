@@ -111,8 +111,10 @@
     <field name="uplink_nb_msgs" type="uint16"/>
     <field name="downlink_nb_msgs" type="uint16"/>
     <field name="downlink_rate" type="uint16" unit="bytes/s"/>
+    <field name="uplink_rate" type="uint16" unit="msgs/s"/>
     <field name="downlink_ovrn" type="uint8"/>
   </message>
+
 
 <!-- Current value of one variable from the dl_settings (airframe.xml) -->
   <message name="DL_VALUE" id="31">

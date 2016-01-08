@@ -64,8 +64,8 @@ void finken_sensor_model_init(void)
   rightBuf[0] = maxDist;
   memset(&finken_sensor_model, 0, sizeof(struct sensor_model_s));
 
-  register_periodic_telemetry(DefaultPeriodic, "FINKEN_SENSOR_MODEL", send_finken_sensor_model_telemetry);
-  register_periodic_telemetry(DefaultPeriodic, "HC_DEBUG", send_finken_hc_debug);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FINKEN_SENSOR_MODEL, send_finken_sensor_model_telemetry);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_HC_DEBUG, send_finken_hc_debug);
 }
 
 void finken_sensor_model_periodic(void)
@@ -154,6 +154,8 @@ void finken_sensor_model_periodic(void)
 }
 
 void send_finken_hc_debug(struct transport_tx *trans, struct link_device* link) {
+	trans=trans;
+	link=link;
 	float pos_z = POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
   DOWNLINK_SEND_HC_DEBUG(
     DefaultChannel,

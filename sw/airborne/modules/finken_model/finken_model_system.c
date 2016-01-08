@@ -106,7 +106,7 @@ void finken_system_model_init(void) {
   finken_system_set_point.velocity_x = FINKEN_VELOCITY_DESIRED_Y;
   finken_system_set_point.velocity_y = FINKEN_VELOCITY_DESIRED_X;
 
-  register_periodic_telemetry(DefaultPeriodic, "FINKEN_SYSTEM_SET_POINT", send_finken_system_set_point_telemetry);
+  register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FINKEN_SYSTEM_SET_POINT, send_finken_system_set_point_telemetry);
 
 }
 
