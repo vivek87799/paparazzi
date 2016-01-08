@@ -71,15 +71,15 @@ void finken_sensor_model_periodic(void)
   memcpy(&finken_sensor_model.acceleration, &imu.accel, sizeof(struct Int32Vect3));
 
 #ifdef USE_SONAR_TOWER
-	sonar_values.front = sonar_filtered_values.front;
-	sonar_values.right = sonar_filtered_values.right;
-	sonar_values.back  = sonar_filtered_values.back;
-	sonar_values.left  = sonar_filtered_values.left;
+	finken_sensor_model.distance_d_front = sonar_filtered_values.front;
+	finken_sensor_model.distance_d_right = sonar_filtered_values.right;
+	finken_sensor_model.distance_d_back  = sonar_filtered_values.back;
+	finken_sensor_model.distance_d_left  = sonar_filtered_values.left;
 #else
-	sonar_values.front = FINKEN_MAX_SONAR_DIST;
-	sonar_values.right = FINKEN_MAX_SONAR_DIST;
-	sonar_values.back  = FINKEN_MAX_SONAR_DIST;
-	sonar_values.left  = FINKEN_MAX_SONAR_DIST;
+	finken_sensor_model.distance_d_front = FINKEN_SONAR_MAX_DIST;
+	finken_sensor_model.distance_d_right = FINKEN_SONAR_MAX_DIST;
+	finken_sensor_model.distance_d_back  = FINKEN_SONAR_MAX_DIST;
+	finken_sensor_model.distance_d_left  = FINKEN_SONAR_MAX_DIST;
 #endif
 
 	if(newZ < FINKEN_MAX_Z && newZ > FINKEN_MIN_Z){
