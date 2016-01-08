@@ -38,8 +38,8 @@ struct sensor_model_s {
   uint16_t distance_d_right;
   uint16_t distance_d_back;
   uint16_t distance_d_left;
-	int16_t distance_x;
-	int16_t distance_y;
+  int16_t distance_diff_x;
+  int16_t distance_diff_y;
   struct Int32Vect3 pos;
   struct Int32Quat attitude;
   struct Int32Vect3 velocity;

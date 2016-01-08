@@ -75,11 +75,15 @@ void finken_sensor_model_periodic(void)
 	finken_sensor_model.distance_d_right = sonar_filtered_values.right;
 	finken_sensor_model.distance_d_back  = sonar_filtered_values.back;
 	finken_sensor_model.distance_d_left  = sonar_filtered_values.left;
+	finken_sensor_model.distance_diff_x  = sonar_filtered_diff_values.x;
+	finken_sensor_model.distance_diff_y  = sonar_filtered_diff_values.y;
 #else
 	finken_sensor_model.distance_d_front = FINKEN_SONAR_MAX_DIST;
 	finken_sensor_model.distance_d_right = FINKEN_SONAR_MAX_DIST;
 	finken_sensor_model.distance_d_back  = FINKEN_SONAR_MAX_DIST;
 	finken_sensor_model.distance_d_left  = FINKEN_SONAR_MAX_DIST;
+	finken_sensor_model.distance_diff_x  = 0;
+	finken_sensor_model.distance_diff_y  = 0;
 #endif
 
 	if(newZ < FINKEN_MAX_Z && newZ > FINKEN_MIN_Z){
@@ -122,7 +126,6 @@ void send_finken_hc_debug(struct transport_tx *trans, struct link_device* link) 
 void send_finken_sensor_model_telemetry(struct transport_tx *trans, struct link_device* link) {
   trans=trans;
   link=link;
-	int16_t distance_diff_x = 0, distance_diff_y = 0;
 	struct Int32Eulers attitude;
 	int32_eulers_of_quat(&attitude, &finken_sensor_model.attitude);
 
@@ -149,7 +152,8 @@ void send_finken_sensor_model_telemetry(struct transport_tx *trans, struct link_
     &finken_sensor_model.distance_d_right,
     &finken_sensor_model.distance_d_left,
     &finken_sensor_model.distance_d_back,
-		&distance_diff_x, & distance_diff_y,
+    &finken_sensor_model.distance_diff_x,
+    &finken_sensor_model.distance_diff_y,
     &pos_x,      &pos_y,      &pos_z,
     &pos_pitch,  &pos_roll,   &pos_yaw,
     &velocity_x, &velocity_y, &velocity_z,

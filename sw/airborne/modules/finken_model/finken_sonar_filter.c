@@ -1,9 +1,13 @@
 #include <modules/finken_model/finken_sonar_filter.h>
 
-struct sonar_values_s sonar_filtered_values;
+enum Axes {X, Y};
 
-static int lpI;
+struct sonar_values_s sonar_filtered_values;
+struct sonar_diff_s sonar_filtered_diff_values;
+
+static int lpI, lpA;
 static uint16_t lowPassBuf[SONAR_END][FINKEN_SONAR_LOW_PASS_SIZE];
+static int16_t lowPassDiff[2][FINKEN_SONAR_DIFF_LOW_PASS_SIZE];
 
 static void setSonarFilterValue(enum Sonars sonar, uint16_t value) {
 	switch (sonar) {
@@ -52,11 +56,35 @@ static uint16_t lowPassFilter(enum Sonars sonar, uint16_t value) {
 	return sum;
 }
 
+static int16_t diffLowPassFilter(enum Axes axis, int16_t value) {
+	lowPassDiff[axis][lpA++] = value;
+	lpA%=FINKEN_SONAR_DIFF_LOW_PASS_SIZE;
+	int16_t sum = 0;
+	for(unsigned int i=0;  i<FINKEN_SONAR_DIFF_LOW_PASS_SIZE; i++)
+		sum +=lowPassDiff[axis][i];
+	sum/=FINKEN_SONAR_DIFF_LOW_PASS_SIZE;
+	return sum;
+}
+
+static int16_t diffRangeFilter(uint16_t a, uint16_t b) {
+	if(a>FINKEN_SONAR_DIFF_GOAL_DIST)
+		a = FINKEN_SONAR_DIFF_FREE_FACTOR * FINKEN_SONAR_DIFF_GOAL_DIST;
+	if(b>FINKEN_SONAR_DIFF_GOAL_DIST)
+		b = FINKEN_SONAR_DIFF_FREE_FACTOR * FINKEN_SONAR_DIFF_GOAL_DIST;
+	int16_t value = (int16_t)a - b;
+	return value;
+}
+
+
 void finken_sonar_filter_init(void) {
 	lpI = 0;
+	lpA = 0;
 	for(unsigned int sonar = SONAR_START; sonar < SONAR_END; sonar++)
 		for(unsigned int i = 0; i < FINKEN_SONAR_LOW_PASS_SIZE; i++)
-			lowPassBuf[sonar][i] = 0;	
+			lowPassBuf[sonar][i] = 0;
+	for(unsigned int axis = X; axis <= Y; axis++)
+		for(unsigned int i = 0; i < FINKEN_SONAR_DIFF_LOW_PASS_SIZE; i++)
+			lowPassDiff[axis][i] = 0;
 }
 
 void finken_sonar_filter_periodic(void) {
@@ -66,4 +94,8 @@ void finken_sonar_filter_periodic(void) {
 		value = lowPassFilter(sonar, value);
 		setSonarFilterValue(sonar, value);
 	}
+	int16_t x = diffRangeFilter(sonar_filtered_values.back, sonar_filtered_values.front);
+	int16_t y = diffRangeFilter(sonar_filtered_values.left, sonar_filtered_values.right);
+	sonar_filtered_diff_values.x = diffLowPassFilter(X, x);
+	sonar_filtered_diff_values.y = diffLowPassFilter(Y, y);
 }
