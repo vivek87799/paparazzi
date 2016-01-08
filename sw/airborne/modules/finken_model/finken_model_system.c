@@ -158,7 +158,8 @@ void finken_system_model_periodic(void)
 	}
 
 	finken_system_set_point.pitch = rcPitch;
-	finken_system_set_point.roll = rcRoll;
+	finken_system_set_point.roll  = rcRoll;
+	finken_system_set_point.yaw   = rcYaw;
 
 	/*error_x_p = (finken_system_set_point.velocity_x - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x)) * FINKEN_VELOCITY_X_P;
 	error_y_p = (finken_system_set_point.velocity_y - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y)) * FINKEN_VELOCITY_Y_P;
