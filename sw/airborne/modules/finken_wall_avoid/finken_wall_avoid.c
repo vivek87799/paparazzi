@@ -1,4 +1,6 @@
 #include <modules/finken_wall_avoid/finken_wall_avoid.h>
+#include "modules/finken_model/finken_model_sensors.h"
+#include "modules/finken_model/finken_model_system.h"
 
 #define T 1.0f/FINKEN_WALL_AVOID_UPDATE_FREQ
 #define T1 FINKEN_WALL_AVOID_CONTROL_DELAY_TIME
@@ -27,26 +29,7 @@ static float rollControl(float rollError) {
 }
 
 static float rollWallAvoid(float rollIn, float distY) {
-	/*distXLeft = distXLeft<maxDist?distXLeft:maxDist;
-	distXRight  = distXRight<maxDist?distXRight:maxDist;
-	//float distXControlLeft = distXLeft>goalDist?freeDist:distXLeft;
-	//float distXControlRight  = distXRight>goalDist?freeDist:distXRight;
-	float distXControlDiff  = 0.0f;
-	//if (distXLeft<goalDist && distXRight <goalDist){
-	//	distXControlDiff  = 0.0f-(distXRight-distXLeft)/2.0;
-	//}
-	//else{
-		if (distXLeft<distXRight && distXLeft<goalDist*1.0){
-			distXControlDiff = -goalDist+distXLeft;
-		}
-		if (distXRight<distXLeft && distXRight<goalDist*1.0){
-			distXControlDiff = goalDist-distXRight;
-		}
-	//}*/
 	float newRoll = rollControl(distY);
-	/*rollIn = (rollIn < -maxRCPitch) ? -maxRCPitch : rollIn;
-	rollIn = (rollIn > maxRCPitch)  ?  maxRCPitch : rollIn;
-	rollIn = (rollIn< deadRCPitch && rollIn > -deadRCPitch) ? 0.0f : rollIn;*/
 	float mod = distY/FINKEN_SONAR_DIFF_FREE_DIST;
   	if (mod > 0 && rollIn > 0)
 		rollIn*=mod;
@@ -65,27 +48,7 @@ static float pitchControl(float pitchError) {
 }
 
 static float pitchWallAvoid(float pitchIn, float distX) {
-	/*distXFront = distXFront<maxDist?distXFront:maxDist;
-	distXBack  = distXBack<maxDist?distXBack:maxDist;
-	//float distXControlFront = distXFront>goalDist?freeDist:distXFront;
-	//float distXControlBack  = distXBack>goalDist?freeDist:distXBack;
-	//float distXControlDiff  = 0.0f-(distXControlBack-distXControlFront);
-	float distXControlDiff  = 0.0f;
-	//if (distXFront<goalDist && distXBack <goalDist){
-	//	distXControlDiff  = 0.0f-(distXBack-distXFront)/2.0;
-	//}
-	//else{
-		if (distXFront<distXBack && distXFront<goalDist*1.0){
-			distXControlDiff = -goalDist+distXFront;
-		}
-		if (distXBack<distXFront && distXBack<goalDist*1.0){
-			distXControlDiff = goalDist-distXBack;
-		}
-	//}*/
 	float newPitch = pitchControl(distX);
-	/*pitchIn = (pitchIn < -maxRCPitch) ? -maxRCPitch : pitchIn;
-	pitchIn = (pitchIn > maxRCPitch)  ?  maxRCPitch : pitchIn;
-	pitchIn = (pitchIn< deadRCPitch && pitchIn > -deadRCPitch) ? 0.0f : pitchIn;*/
 	float mod = distX/FINKEN_SONAR_DIFF_FREE_DIST;
 	if (mod > 0 && pitchIn > 0)
 		pitchIn*=mod;
@@ -107,6 +70,7 @@ void finken_wall_avoid_periodic() {
 
 	finken_actuators_set_point.pitch = pitchWallAvoid(finken_system_set_point.pitch, finken_sensor_model.distance_diff_x/100.0);
 	finken_actuators_set_point.roll = rollWallAvoid(finken_system_set_point.roll, finken_sensor_model.distance_diff_y/100.0);
+	finken_actuators_set_point.yaw = finken_system_set_point.yaw;
 
 }
 
