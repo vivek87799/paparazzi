@@ -161,7 +161,7 @@ void sonar_array_i2c_periodic(void) {
 #ifndef SITL
 	enum Sonars read_sonar = current_sonar;
 	enum Sonars fetch_sonar = (current_sonar+1)%SONAR_END;
-	enum Sonars range_sonar = (current_sonar+2)%SONAR_END;
+	enum Sonars range_sonar = (current_sonar+3)%SONAR_END;
 	
 	uint16_t value = sonar_read(read_sonar);
 	setSonarValue(read_sonar, value);
