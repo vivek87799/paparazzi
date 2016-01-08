@@ -148,9 +148,9 @@ static uint16_t sonar_read(enum Sonars sonar)
 		uint16_t value = sonar_i2c_read_trans[sonar].buf[0];
 		value<<=8;
 		value |= sonar_i2c_read_trans[sonar].buf[1];
-		return value;
 		sonarState[sonar] = READY;
-	}
+		return value;
+	} else
 	return 0;
 }
 
