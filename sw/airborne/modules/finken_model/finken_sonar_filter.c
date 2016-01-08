@@ -81,7 +81,7 @@ void finken_sonar_filter_init(void) {
 	lpA = 0;
 	for(unsigned int sonar = SONAR_START; sonar < SONAR_END; sonar++)
 		for(unsigned int i = 0; i < FINKEN_SONAR_LOW_PASS_SIZE; i++)
-			lowPassBuf[sonar][i] = 0;
+			lowPassBuf[sonar][i] = FINKEN_SONAR_MAX_DIST;
 	for(unsigned int axis = X; axis <= Y; axis++)
 		for(unsigned int i = 0; i < FINKEN_SONAR_DIFF_LOW_PASS_SIZE; i++)
 			lowPassDiff[axis][i] = 0;
