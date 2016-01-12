@@ -49,6 +49,7 @@
 		<load name="px4flow.xml" />
 		<load name="nav_finken.xml" />-->
     <load name="finken_model.xml">
+			<define name="NO_GPS_NEEDED_FOR_NAV" value="TRUE"/>
 			<define name="USE_SONAR_TOWER"/>
 		</load>
 
