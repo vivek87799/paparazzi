@@ -11,7 +11,6 @@
 #define b0 Kp*(T-2.0f*Tv)/(T+2.0f*T1)
 #define b1 Kp*(T+2.0f*Tv)/(T+2.0f*T1)
 
-#define FINKEN_SONAR_DIFF_FREE_DIST (FINKEN_SONAR_DIFF_GOAL_DIST*FINKEN_SONAR_DIFF_FREE_FACTOR)
 
 static const float maxControlRoll  = FINKEN_WALL_AVOID_MAX_CONTROL;
 static const float maxControlPitch = FINKEN_WALL_AVOID_MAX_CONTROL;
@@ -30,12 +29,12 @@ static float rollControl(float rollError) {
 
 static float rollWallAvoid(float rollIn, float distY) {
 	float newRoll = rollControl(distY);
-	float mod = distY/FINKEN_SONAR_DIFF_FREE_DIST;
-  	if (mod > 0 && rollIn > 0)
+	float mod = ((distY<0?-distY:distY)-FINKEN_SONAR_DIFF_GUARD_DIST)/(FINKEN_SONAR_DIFF_FREE_DIST-FINKEN_SONAR_DIFF_GUARD_DIST);
+	mod = mod<0?0:mod;
+	mod = mod>1?1:mod;
+  	if ((distY > 0 && rollIn < 0) || (distY < 0  && rollIn > 0))
 		rollIn*=mod;
-	if (mod < 0  && rollIn < 0)
-		rollIn*=-mod;
-	return newRoll + rollIn;
+	return newRoll/* + rollIn*/;
 }
 
 static float pitchControl(float pitchError) {
@@ -49,12 +48,12 @@ static float pitchControl(float pitchError) {
 
 static float pitchWallAvoid(float pitchIn, float distX) {
 	float newPitch = pitchControl(distX);
-	float mod = distX/FINKEN_SONAR_DIFF_FREE_DIST;
-	if (mod > 0 && pitchIn > 0)
+	float mod = ((distX<0?-distX:distX)-FINKEN_SONAR_DIFF_GUARD_DIST)/(FINKEN_SONAR_DIFF_FREE_DIST-FINKEN_SONAR_DIFF_GUARD_DIST);
+	mod = mod<0?0:mod;
+	mod = mod>1?1:mod;
+  	if ((distX > 0 && pitchIn < 0) || (distX < 0  && pitchIn > 0))
 		pitchIn*=mod;
-	if (mod < 0  && pitchIn < 0)
-		pitchIn*=-mod;
-	return newPitch + pitchIn;
+	return newPitch/* + pitchIn*/;
 }
 
 void finken_wall_avoid_init() {

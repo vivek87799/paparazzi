@@ -54,6 +54,9 @@ void finken_sensor_model_init(void)
 
 void finken_sensor_model_periodic(void)
 {
+	static unsigned int filterCount = 0;
+	if(filterCount++%3==0)
+		finken_sonar_filter_periodic();
   // current timestamp
   uint32_t now_ms = get_sys_time_msec();
 

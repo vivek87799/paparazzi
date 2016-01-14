@@ -2,8 +2,6 @@
 	<section name="FINKEN_WALL_AVOID" prefix="FINKEN_WALL_AVOID_">
 		<define name="MAX_CONTROL" value="15.0"/>
 		<define name="GUARD_DIST"  value="0.7"/>
-		<define name="GOAL_DIST"   value="1.2"/>
-		<define name="FREE_FACTOR" value="0.799"/>
 		<define name="MAX_DIST"    value="1.5"/>
 		<!-- original 
 		<define name="UPDATE_FREQ"         value="5.0" />

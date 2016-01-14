@@ -19,7 +19,7 @@
   <periodic fun="finken_sensor_model_periodic()" freq="30" />
 	<periodic fun="finken_system_model_periodic()" freq="30" />
 	<periodic fun="finken_actuators_model_periodic()" freq="30" />
-	<periodic fun="finken_sonar_filter_periodic()" freq="7"/>
+	<!--<periodic fun="finken_sonar_filter_periodic()" freq="10"/>-->
   <makefile>
     <file name="finken_model_sensors.c" />
     <file name="finken_model_system.c" />
