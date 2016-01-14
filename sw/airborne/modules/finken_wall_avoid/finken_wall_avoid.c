@@ -32,9 +32,9 @@ static float rollWallAvoid(float rollIn, float distY) {
 	float mod = ((distY<0?-distY:distY)-FINKEN_SONAR_DIFF_GUARD_DIST)/(FINKEN_SONAR_DIFF_FREE_DIST-FINKEN_SONAR_DIFF_GUARD_DIST);
 	mod = mod<0?0:mod;
 	mod = mod>1?1:mod;
-  	if ((distY > 0 && rollIn < 0) || (distY < 0  && rollIn > 0))
+  	if ((rollIn > 0 && rollIn < 0) || (rollIn < 0  && rollIn > 0))
 		rollIn*=mod;
-	return newRoll/* + rollIn*/;
+	return newRoll + rollIn;
 }
 
 static float pitchControl(float pitchError) {
@@ -51,9 +51,9 @@ static float pitchWallAvoid(float pitchIn, float distX) {
 	float mod = ((distX<0?-distX:distX)-FINKEN_SONAR_DIFF_GUARD_DIST)/(FINKEN_SONAR_DIFF_FREE_DIST-FINKEN_SONAR_DIFF_GUARD_DIST);
 	mod = mod<0?0:mod;
 	mod = mod>1?1:mod;
-  	if ((distX > 0 && pitchIn < 0) || (distX < 0  && pitchIn > 0))
+  	if ((newPitch > 0 && pitchIn < 0) || (newPitch < 0  && pitchIn > 0))
 		pitchIn*=mod;
-	return newPitch/* + pitchIn*/;
+	return newPitch + pitchIn;
 }
 
 void finken_wall_avoid_init() {
