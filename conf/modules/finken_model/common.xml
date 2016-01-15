@@ -5,7 +5,7 @@
 		<define name="SONAR_MAX_DIST" value="300" />
 		<define name="SONAR_MIN_DIST" value="20" />
 		<define name="SONAR_LOW_PASS_SIZE" value="3" />
-		<define name="SONAR_DIFF_LOW_PASS_SIZE" value="5" />
+		<define name="SONAR_DIFF_LOW_PASS_SIZE" value="3" />
 		<define name="SONAR_DIFF_GOAL_DIST" value="120" />
 		<define name="SONAR_DIFF_FREE_FACTOR" value="0.9" />
 		<define name="SONAR_DIFF_GUARD_FACTOR" value="0.7" />

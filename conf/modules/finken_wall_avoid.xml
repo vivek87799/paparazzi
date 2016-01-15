@@ -10,7 +10,7 @@
     <file name="finken_wall_avoid.h" />
   </header>
   <init fun="finken_wall_avoid_init()" />
-  <periodic fun="finken_wall_avoid_periodic()" freq="8" />
+  <periodic fun="finken_wall_avoid_periodic()" freq="5" />
   <makefile>
     <file name="finken_wall_avoid.c" />
 	</makefile>
