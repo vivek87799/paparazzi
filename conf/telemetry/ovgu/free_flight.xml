@@ -16,6 +16,7 @@
       <message name="WP_MOVED"                 period="5"/>
       <message name="INS"                      period="5"/>
       <message name="RC"            	       period="0.5"/>
+      <message name="I2C_ERRORS"               period="4.1"/>
 		</mode>
 		<mode name="extended">
       <message name="FINKEN_SENSOR_MODEL"      period="2.0" />
