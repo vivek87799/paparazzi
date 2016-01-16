@@ -73,12 +73,12 @@ void finken_sensor_model_periodic(void)
   // current timestamp
   uint32_t now_ms = get_sys_time_msec();
 
-/*#ifdef USE_FLOW
+#ifdef USE_FLOW
 	float newZ = optical_flow.ground_distance;
 #else
 	float newZ = ir_distance;
-#endif*/
-	float newZ = ir_distance;
+#endif
+	//float newZ = ir_distance;
 
   memcpy(&finken_sensor_model.rates, &imu.gyro, sizeof(struct Int32Rates));
 	/* x = y and y = x because of the coord. transformation from sensor to body coord. system */
@@ -178,9 +178,9 @@ void send_finken_sensor_model_telemetry(struct transport_tx *trans, struct link_
 	float pos_x      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.x);
 	float pos_y      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.y);
 	float pos_z      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
-	float pos_pitch  = ANGLE_FLOAT_OF_BFP(attitude.theta);
-	float pos_roll   = ANGLE_FLOAT_OF_BFP(attitude.phi);
-	float pos_yaw    = ANGLE_FLOAT_OF_BFP(attitude.psi);
+	float pos_pitch  = (ANGLE_FLOAT_OF_BFP(attitude.theta)*57.3248);	//*180/3.14
+	float pos_roll   = (ANGLE_FLOAT_OF_BFP(attitude.phi)*57.3248);
+	float pos_yaw    = (ANGLE_FLOAT_OF_BFP(attitude.psi)*57.3248);
 	float velocity_x = SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x);
 	float velocity_y = SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y);
 	float velocity_z = SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.z);

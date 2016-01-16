@@ -7,8 +7,9 @@
     <mode name="default" key_press="d">
       <!--<message name="HC_DEBUG"      period="0.04" />-->
 			<!--<message name="FINKEN_SYSTEM_MODEL"      period="3" />-->
-      <message name="FINKEN_SENSOR_MODEL"      period="0.3" />
-	<!--	<message name="FINKEN_SYSTEM_SET_POINT"      period="3" />
+      <message name="FINKEN_SENSOR_MODEL"      period="0.4" />
+	<message name="FINKEN_SYSTEM_SET_POINT"      period="0.4" />
+	<!--	
       <message name="WP_MOVED"                 period="5"/>
       <message name="INS"                      period="5"/>
       <message name="UART_ERRORS"              period="5"/>
@@ -16,7 +17,7 @@
       <message name="INS_REF"                  period="5"/>
       <message name="ROTORCRAFT_FP"            period="1"/>
 	-->
-      <message name="FINKEN_ACTUATORS_MODEL"   period="0.3" />
+      <message name="FINKEN_ACTUATORS_MODEL"   period="0.4" />
       <message name="DL_VALUE"                 period="3"/>
       <message name="ROTORCRAFT_STATUS"        period="3"/>
       <message name="ALIVE"                    period="3"/>

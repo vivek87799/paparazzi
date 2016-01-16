@@ -58,19 +58,19 @@
  */
 
 #ifndef FINKEN_POSITION_X_P
-#define FINKEN_POSITION_X_P 20
+#define FINKEN_POSITION_X_P 25
 #endif
 
 #ifndef FINKEN_POSITION_Y_P
-#define FINKEN_POSITION_Y_P 20
+#define FINKEN_POSITION_Y_P 15
 #endif
 
 #ifndef FINKEN_POSITION_X_D
-#define FINKEN_POSITION_X_D 1.25
+#define FINKEN_POSITION_X_D 2
 #endif
 
 #ifndef FINKEN_POSITION_Y_D
-#define FINKEN_POSITION_Y_D 1.25
+#define FINKEN_POSITION_Y_D 1.6
 #endif
 
 /*
@@ -95,7 +95,7 @@
  *	constant to enable/disable position controller
  */
 #ifndef FINKEN_POSITION_CONTROL_MODE
-#define FINKEN_POSITION_CONTROL_MODE 0	//2: Circle, 1: position control
+#define FINKEN_POSITION_CONTROL_MODE 1	//2: Circle, 1: position control
 #endif
 
 /*
@@ -268,30 +268,31 @@ void finken_system_model_periodic(void)
  			default:
  				break;
  		}
- 		error_px_p = (set_point_position_x - POS_FLOAT_OF_BFP(finken_sensor_model.pos.x)) * FINKEN_POSITION_X_P;
+ 		error_px_p = (0 - POS_FLOAT_OF_BFP(finken_sensor_model.pos.x)) * FINKEN_POSITION_X_P;
  		error_py_p = (set_point_position_y - POS_FLOAT_OF_BFP(finken_sensor_model.pos.y)) * FINKEN_POSITION_Y_P;//FINKEN_POSITION_Y_P;
  		error_px_d = (0 - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x)) * FINKEN_POSITION_X_D;	//zero velocity
  		error_py_d = (0 - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y)) * FINKEN_POSITION_Y_D;	//zero velocity
  
- 		if (error_px_p > 20.0f)
- 			error_px_p = 20.0f;
- 		else if (error_px_p < -20.0f)
- 			error_px_p = -20.0f;
- 		finken_actuators_set_point.pitch = -error_px_p; //  error_px_d;
- 		if (error_py_p > 20.0f)
- 			error_py_p = 20.0f;
- 		else if (error_py_p < -20.0f)
- 			error_py_p = -20.0f;
+ 		finken_actuators_set_point.pitch = -error_px_p - error_px_d; //  error_px_d;
+ 		if (finken_actuators_set_point.pitch > 20.0f)
+ 			finken_actuators_set_point.pitch = 20.0f;
+ 		else if (finken_actuators_set_point.pitch < -20.0f)
+ 			finken_actuators_set_point.pitch = -20.0f;
+
  		finken_actuators_set_point.roll = error_py_p + error_py_d;
+ 		if (finken_actuators_set_point.roll > 20.0f)
+ 			finken_actuators_set_point.roll = 20.0f;
+ 		else if (finken_actuators_set_point.roll < -20.0f)
+ 			finken_actuators_set_point.roll = -20.0f;
   } else	{
 
-	finken_system_set_point.pitch = rcPitch;
-	finken_system_set_point.roll = rcRoll;
+	finken_actuators_set_point.pitch = rcPitch;
+	finken_actuators_set_point.roll = rcRoll;
 
 	}
-	
-	finken_system_set_point.pitch = rcPitch;
 
+finken_actuators_set_point.pitch = -15.0;
+	
 	// TODO: Theta
 }
 
@@ -302,8 +303,8 @@ void send_finken_system_set_point_telemetry(struct transport_tx *trans, struct l
   DOWNLINK_SEND_FINKEN_SYSTEM_SET_POINT(
     DefaultChannel,
     DefaultDevice,
-		&finken_system_set_point.z,
-		&finken_system_set_point.yaw,
+		&finken_system_set_point.pitch,
+		&finken_system_set_point.roll,
 		&set_point_position_x,
 		&set_point_position_y
   );
