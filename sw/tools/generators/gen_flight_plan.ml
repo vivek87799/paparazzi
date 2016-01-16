@@ -371,6 +371,13 @@ let rec print_stage = fun index_of_waypoints x ->
         end;
         right ();
         lprintf "NavAttitude(RadOfDeg(%s));\n" (parsed_attrib x "roll");
+        begin
+					try
+						let heading = parsed_attrib x "heading" in
+						lprintf "NavHeading(RadOfDeg(%s));\n" heading;
+						with ExtXml.Error _ ->
+						lprintf ""
+				end;
         ignore (output_vmode x "" "");
         left (); lprintf "}\n";
         lprintf "break;\n"

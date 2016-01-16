@@ -1,4 +1,6 @@
 #include <modules/finken_wall_avoid/finken_wall_avoid.h>
+#include "modules/finken_model/finken_model_sensors.h"
+#include "modules/finken_model/finken_model_system.h"
 
 #define T 1.0f/FINKEN_WALL_AVOID_UPDATE_FREQ
 #define T1 FINKEN_WALL_AVOID_CONTROL_DELAY_TIME
@@ -119,6 +121,7 @@ void finken_wall_avoid_periodic() {
 
 	finken_actuators_set_point.pitch = pitchWallAvoid(finken_system_set_point.pitch, finken_sensor_model.distance_d_back/100.0, finken_sensor_model.distance_d_front/100.0);
 	finken_actuators_set_point.roll = rollWallAvoid(finken_system_set_point.roll, finken_sensor_model.distance_d_right/100.0, finken_sensor_model.distance_d_left/100.0);
+	finken_actuators_set_point.yaw = finken_system_set_point.yaw;
 
 }
 
