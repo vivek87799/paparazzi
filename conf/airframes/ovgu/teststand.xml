@@ -8,6 +8,7 @@
   <firmware name="rotorcraft">
     <target name="ap" board="lia_1.1">
       <subsystem name="radio_control" type="spektrum">
+				<define name="NO_GPS_NEEDED_FOR_NAV" value="TRUE"/>
         <define name="RADIO_MODE" value="RADIO_FLAP"/>
         <define name="RADIO_KILL_SWITCH" value="RADIO_GEAR"/>
 	<define name="SPEKTRUM_BIND_PIN_HIGH"/>
@@ -49,6 +50,7 @@
 		<load name="px4flow.xml" />
 		<load name="nav_finken.xml" />-->
     <load name="finken_model.xml">
+			<define name="NO_GPS_NEEDED_FOR_NAV" value="TRUE"/>
 			<define name="USE_SONAR_TOWER"/>
 		</load>
 

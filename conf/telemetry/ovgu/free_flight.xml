@@ -20,9 +20,8 @@
 		</mode>
 		<mode name="extended">
       <message name="FINKEN_SENSOR_MODEL"      period="2.0" />
-      <message name="FINKEN_SYSTEM_MODEL"      period="0.3" />
       <message name="FINKEN_ACTUATORS_MODEL"   period="2.0" />
-      <message name="SONAR_ARRAY"              period="3.0"/>
+      <message name="SONAR_ARRAY"              period="1.0"/>
       <message name="DL_VALUE"                 period="1.1"/>
       <message name="ROTORCRAFT_STATUS"        period="2.0"/>
       <message name="ROTORCRAFT_FP"            period="1.5"/>
@@ -95,8 +94,6 @@
       <message name="ROTORCRAFT_STATUS" period="1.2"/>
       <message name="DL_VALUE"          period="0.5"/>
       <message name="ALIVE"             period="0.9"/>
-      <message name="STAB_ATTITUDE"     period=".03"/>
-      <message name="STAB_ATTITUDE_REF" period=".03"/>
     </mode>
 
   </process>

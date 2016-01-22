@@ -110,7 +110,7 @@ void sonar_array_i2c_init(void)
 	}
 
 	// register telemetry
-	register_periodic_telemetry(DefaultPeriodic, "SONAR_ARRAY",
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_SONAR_ARRAY,
 			send_sonar_array_telemetry);
 }
 
