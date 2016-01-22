@@ -69,7 +69,6 @@
 	<include href="conf/airframes/ovgu/calib/$AC_ID_imu_calib.xml" /> 
 	<section name="FINKEN_WALL_AVOID" prefix="FINKEN_WALL_AVOID_"/>
 	<include href="conf/modules/finken_wall_avoid/common.xml"/>
-	<include href="conf/modules/finken_wall_avoid/$AC_ID_param.xml"/>
 	<!--
     ^Front^
 	NW			NE
