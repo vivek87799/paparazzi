@@ -62,7 +62,7 @@ void finken_wall_avoid_init() {
 	rollError_k1  = 0.0f;
 	roll_k1       = 0.0f;
 		
-	register_periodic_telemetry(DefaultPeriodic, "FINKEN_WALL_AVOID", send_finken_wall_avoid_telemetry);
+	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FINKEN_WALL_AVOID, send_finken_wall_avoid_telemetry);
 }
 
 void finken_wall_avoid_periodic() {
