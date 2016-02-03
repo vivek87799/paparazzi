@@ -1,4 +1,5 @@
 #include <modules/finken_model/finken_sonar_filter.h>
+#include <modules/sonar/sonar_array_i2c.h>
 
 enum Axes {X, Y};
 
@@ -68,9 +69,9 @@ static int16_t diffLowPassFilter(enum Axes axis, int16_t value) {
 
 static int16_t diffRangeFilter(uint16_t a, uint16_t b) {
 	if(a>FINKEN_SONAR_DIFF_GOAL_DIST)
-		a = FINKEN_SONAR_DIFF_FREE_FACTOR * FINKEN_SONAR_DIFF_GOAL_DIST;
+		a = FINKEN_SONAR_DIFF_GOAL_DIST;
 	if(b>FINKEN_SONAR_DIFF_GOAL_DIST)
-		b = FINKEN_SONAR_DIFF_FREE_FACTOR * FINKEN_SONAR_DIFF_GOAL_DIST;
+		b = FINKEN_SONAR_DIFF_GOAL_DIST;
 	int16_t value = (int16_t)a - b;
 	return value;
 }
@@ -95,7 +96,7 @@ void finken_sonar_filter_periodic(void) {
 		setSonarFilterValue(sonar, value);
 	}
 	int16_t x = diffRangeFilter(sonar_filtered_values.back, sonar_filtered_values.front);
-	int16_t y = diffRangeFilter(sonar_filtered_values.left, sonar_filtered_values.right);
+	int16_t y = diffRangeFilter(sonar_filtered_values.right, sonar_filtered_values.left);
 	sonar_filtered_diff_values.x = diffLowPassFilter(X, x);
 	sonar_filtered_diff_values.y = diffLowPassFilter(Y, y);
 }
