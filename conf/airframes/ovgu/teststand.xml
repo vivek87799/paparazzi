@@ -6,14 +6,15 @@
 <airframe name="Quadrotor Lia ovgu">
 
   <firmware name="rotorcraft">
+		<configuration name="FLASH_MODE" value="SWD"/>
     <target name="ap" board="lia_1.1">
       <subsystem name="radio_control" type="spektrum">
 				<define name="NO_GPS_NEEDED_FOR_NAV" value="TRUE"/>
         <define name="RADIO_MODE" value="RADIO_FLAP"/>
         <define name="RADIO_KILL_SWITCH" value="RADIO_GEAR"/>
-	<define name="SPEKTRUM_BIND_PIN_HIGH"/>
-	<define name="SPEKTRUM_BIND_PIN_PORT" value="GPIOC"/>
-	<define name="SPEKTRUM_BIND_PIN" value="GPIO12"/>
+				<define name="SPEKTRUM_BIND_PIN_HIGH"/>
+				<define name="SPEKTRUM_BIND_PIN_PORT" value="GPIOC"/>
+				<define name="SPEKTRUM_BIND_PIN" value="GPIO12"/>
 				<!--
         <configure name="USE_SECONDARY_SPEKTRUM_RECEIVER" value="1"/>
 				/-->
