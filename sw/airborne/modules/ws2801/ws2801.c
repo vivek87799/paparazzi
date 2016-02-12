@@ -32,16 +32,16 @@ uint8_t ws2801_blue;
 
 static void setClock(enum Logic value) {
 	if(value)
-		LED_OFF(7);
+		LED_OFF(6);
 	else
-		LED_ON(7);
+		LED_ON(6);
 }
 
 static void setData(enum Logic value) {
 	if(value)
-		LED_OFF(12);
+		LED_OFF(7);
 	else
-		LED_ON(12);
+		LED_ON(7);
 }
 
 static void start(void) {
@@ -54,9 +54,18 @@ void ws2801_init(void) {
 	currColor = 0;
 	currBit = 8;
 	clockState = clockIdle;
-	for(uint8_t i=0;i<WS2801_LEDS;i++)
-		for(uint8_t j=0;j<3;j++)
-		colorBuffer[i][j] = 0;
+	colorBuffer[0][R] = 255;
+	colorBuffer[0][G] = 255;
+	colorBuffer[0][B] = 255;
+	colorBuffer[1][R] = 255;
+	colorBuffer[1][G] = 255;
+	colorBuffer[1][B] = 255;
+	colorBuffer[2][R] = 255;
+	colorBuffer[2][G] = 255;
+	colorBuffer[2][B] = 255;
+	colorBuffer[3][R] = 0;
+	colorBuffer[3][G] = 0;
+	colorBuffer[3][B] = 0;
 	start();
 }
 
@@ -112,6 +121,6 @@ enum Errors ws2801_setColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b) {
 	return SUCCESS;
 }
 
-void ws2801_update(uint8_t ledNr __attribute__((unused))) {
-	ws2801_setColor(ws2801_ledNr, ws2801_red, ws2801_green, ws2801_blue);
+void ws2801_update(uint8_t ledNr) {
+	ws2801_setColor(ledNr, ws2801_red, ws2801_green, ws2801_blue);
 }
