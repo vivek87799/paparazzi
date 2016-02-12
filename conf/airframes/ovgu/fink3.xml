@@ -48,6 +48,7 @@
       <configure name="ADC_IR" value="ADC_3"/>
 		</load>
     <load name="finken_wall_avoid.xml"/>
+		<load name="ws2801.xml"/>
     <!--<load name="finken_rc_passthrough.xml"/>-->
 </modules>
 
