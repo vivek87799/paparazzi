@@ -54,19 +54,7 @@ void ws2801_init(void) {
 	currColor = 0;
 	currBit = 8;
 	clockState = clockIdle;
-	colorBuffer[0][R] = 255;
-	colorBuffer[0][G] = 255;
-	colorBuffer[0][B] = 255;
-	colorBuffer[1][R] = 255;
-	colorBuffer[1][G] = 255;
-	colorBuffer[1][B] = 255;
-	colorBuffer[2][R] = 255;
-	colorBuffer[2][G] = 255;
-	colorBuffer[2][B] = 255;
-	colorBuffer[3][R] = 0;
-	colorBuffer[3][G] = 0;
-	colorBuffer[3][B] = 0;
-	start();
+	ws2801_deactivateLeds();
 }
 
 void ws2801_event(void) {
@@ -121,6 +109,25 @@ enum Errors ws2801_setColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b) {
 	return SUCCESS;
 }
 
+int ws2801_activateLeds(void){
+	colorBuffer[0][G]=255;
+	colorBuffer[1][G]=255;
+	colorBuffer[2][R]=255;
+	colorBuffer[3][R]=255;
+	start();
+	return 0;
+}
+
+int ws2801_deactivateLeds(void){
+	for(unsigned int i=0;i<WS2801_LEDS;i++)
+		for(unsigned int j=0;j<RGB_END;j++)
+			colorBuffer[i][j] = 0;
+	start();
+	return 0;
+}
+
+
 void ws2801_update(uint8_t ledNr) {
+	ws2801_ledNr=ledNr;
 	ws2801_setColor(ledNr, ws2801_red, ws2801_green, ws2801_blue);
 }
