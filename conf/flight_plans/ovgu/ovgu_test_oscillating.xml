@@ -1,0 +1,61 @@
+<!-- DOCTYPE flight_plan SYSTEM "flight_plan.dtd" -->
+
+<flight_plan NAME="Fink" LON0="1.27289" MAX_DIST_FROM_HOME="1000" GROUND_ALT="185" SECURITY_HEIGHT="25" QFU="270" ALT="250" LAT0="43.46223">
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="120.0" alt="250."/>
+  </waypoints>
+	<header>
+		#include "modules/finken_model/finken_model_system.h"
+        #include "modules/finken_model/finken_model_oscillating.h"
+		#include "subsystems/electrical.h"
+	</header>
+	<blocks>
+		<block name="pre_Takeoff">
+			<attitude pitch="0.0" roll="0.0" throttle="0.0" until="stage_time > 60" vmode="throttle" />
+			<deroute block="Takeoff" />
+		</block>
+		
+		<block name="default">
+			<set value="false" var="finken_system_model_control_height"/>
+			<attitude pitch="0.0" roll="0.0" throttle="0.0" until="FALSE" vmode="throttle" />
+		</block>
+
+        <block key="t" name="Takeoff" strip_button="Takeoff" strip_icon="takeoff.png">
+            <set value="0" var="autopilot_flight_time"/>
+            <set value="0.5" var="finken_system_set_point.z"/>
+						<set value="true" var="finken_system_model_control_height"/>
+            <attitude pitch="0.0" roll="0.0" throttle="compensate_battery_drop(0.35)" until="stage_time > 3" vmode="throttle" />
+            <attitude pitch="0.0" roll="0.0" throttle="compensate_battery_drop(0.45)" until="stage_time > 4" vmode="throttle" />
+            <deroute block="inair"/>
+        </block>
+        
+		<block name="inair">
+            <set value="false" var="finken_oscillating_mode" />
+            <set value="1.00" var="finken_system_set_point.z"/>
+            <attitude pitch="0.0" roll="0.0" throttle="finken_actuators_model.thrust" until="stage_time > 10" vmode="throttle"/>
+            <deroute block="oscillating"/>
+        </block>
+        
+        <block name="oscillating">
+            <set value="true" var="finken_oscillating_mode" />
+	    <set value="true" var="search_neighbor" />		
+            <attitude pitch="0.0" roll="0.0" throttle="finken_actuators_model.thrust" until="65 > electrical.vsupply" vmode="throttle"/>
+            <deroute block="Landing"/>
+        </block>
+
+
+		<block key="l" name="Landing" strip_button="Landing" strip_icon="land-rignt.png">
+            <set value="false" var="finken_oscillating_mode" />
+            <set value="0.45" var="finken_system_set_point.z"/>
+            <attitude pitch="0.0" roll="0.0" throttle="finken_actuators_model.thrust" until="stage_time > 2" vmode="throttle"/>
+            <set value="0.35" var="finken_system_set_point.z"/>
+            <attitude pitch="0.0" roll="0.0" throttle="finken_actuators_model.thrust" until="stage_time > 4" vmode="throttle"/>
+            <set value="0.25" var="finken_system_set_point.z"/>
+            <attitude pitch="0.0" roll="0.0" throttle="finken_actuators_model.thrust" until="stage_time > 6" vmode="throttle"/>
+            <attitude pitch="0.0" roll="0.0" throttle="compensate_battery_drop(0.35)" until="stage_time > 8" vmode="throttle" />
+            <deroute block="default"/>
+		</block>
+		
+  </blocks>
+</flight_plan>
+

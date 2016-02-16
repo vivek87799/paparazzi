@@ -7,8 +7,7 @@
    telemetry="telemetry/ovgu/free_flight.xml"
    flight_plan="flight_plans/ovgu/free_flight.xml"
    settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_rate.xml settings/control/stabilization_att_int_quat.xml settings/estimation/ahrs_float_cmpl.xml"
-   settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_rate.xml settings/control/stabilization_att_int_quat.xml settings/estimation/ahrs_float_cmpl.xml settings/estimation/body_to_imu.xml"
-   settings_modules="modules/ws2801.xml"
+   settings_modules="modules/ws2801.xml modules/logger_sd_spi_direct.xml"
    gui_color="#fe32ffff0000"
   />
   <aircraft
@@ -30,7 +29,7 @@
    telemetry="telemetry/ovgu/free_flight.xml"
    flight_plan="flight_plans/ovgu/free_flight.xml"
    settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
-   settings_modules=""
+   settings_modules="modules/ws2801.xml"
    gui_color="white"
   />
   <aircraft
@@ -63,8 +62,8 @@
    telemetry="telemetry/ovgu/free_flight.xml"
    flight_plan="flight_plans/ovgu/free_flight.xml"
    settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
-   settings_modules=""
    gui_color="#000016a9ffff"
+   settings_modules="modules/ws2801.xml"
   />
   <aircraft
    name="Quad_Lia_ovgu_teststand_01"
@@ -72,7 +71,7 @@
    airframe="airframes/ovgu/teststand.xml"
    radio="radios/spektrum.xml"
    telemetry="telemetry/ovgu/teststand.xml"
-   flight_plan="flight_plans/ovgu/teststand.xml"
+   flight_plan="flight_plans/ovgu/ovgu_test_oscillating.xml"
    settings="settings/rotorcraft_basic.xml settings/control/rotorcraft_guidance.xml settings/control/stabilization_att_int.xml settings/control/stabilization_rate.xml settings/estimation/ahrs_int_cmpl_quat.xml"
    settings_modules=""
    gui_color="white"

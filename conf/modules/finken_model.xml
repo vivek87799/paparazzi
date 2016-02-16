@@ -11,20 +11,28 @@
     <file name="finken_sonar_filter.h" />
     <file name="finken_model_system.h" />
     <file name="finken_model_actuators.h" />
+    <file name="finken_model_oscillating.h" />
+    <file name="finken_model_statemachine.h" />
   </header>
   <init fun="finken_sensor_model_init()" />
   <init fun="finken_sonar_filter_init()" />
   <init fun="finken_system_model_init()" />
   <init fun="finken_actuators_model_init()" />
+    <init fun="finken_oscillating_model_init()" />
+    <init fun="finken_statemachine_model_init()" />
   <periodic fun="finken_sensor_model_periodic()" freq="30" />
 	<periodic fun="finken_system_model_periodic()" freq="30" />
 	<periodic fun="finken_actuators_model_periodic()" freq="30" />
+    <periodic fun="finken_oscillating_model_periodic()" freq="5" />
+    <periodic fun="finken_statemachine_model_periodic()" freq="12" />
 	<!--<periodic fun="finken_sonar_filter_periodic()" freq="10"/>-->
   <makefile>
     <file name="finken_model_sensors.c" />
     <file name="finken_model_system.c" />
     <file name="finken_model_actuators.c" />
     <file name="finken_sonar_filter.c" />
+    <file name="finken_model_oscillating.c" />
+    <file name="finken_model_statemachine.c" />
 	</makefile>
 
 </module>
