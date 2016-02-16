@@ -1,6 +1,7 @@
 #include <modules/finken_wall_avoid/finken_wall_avoid.h>
 #include "modules/finken_model/finken_model_sensors.h"
 #include "modules/finken_model/finken_model_system.h"
+#include "subsystems/radio_control.h"
 
 #define T 1.0f/FINKEN_WALL_AVOID_UPDATE_FREQ
 #define T1 FINKEN_WALL_AVOID_CONTROL_DELAY_TIME
@@ -11,6 +12,9 @@
 #define b0 Kp*(T-2.0f*Tv)/(T+2.0f*T1)
 #define b1 Kp*(T+2.0f*Tv)/(T+2.0f*T1)
 
+#ifndef WALL_AVOID_RC_SWITCH
+#define WALL_AVOID_RC_SWITCH RADIO_AUX3
+#endif
 
 static const float maxControlRoll  = FINKEN_WALL_AVOID_MAX_CONTROL;
 static const float maxControlPitch = FINKEN_WALL_AVOID_MAX_CONTROL;
@@ -28,12 +32,18 @@ static float rollControl(float rollError) {
 }
 
 static float rollWallAvoid(float rollIn, float distY) {
+	/* Overwrite wall avoid controller if switch is not active */
+	if(radio_control.values[ WALL_AVOID_RC_SWITCH ] < 0)
+		return rollIn;
+	/* rollIn: rc-input roll-angle, distY: y-direction-error */
 	float newRoll = rollControl(distY);
+	/* mod variable for dampening */
 	float mod = ((distY<0?-distY:distY)-FINKEN_SONAR_DIFF_GUARD_DIST)/(FINKEN_SONAR_DIFF_FREE_DIST-FINKEN_SONAR_DIFF_GUARD_DIST);
 	mod = mod<0?0:mod;
 	mod = mod>1?1:mod;
-  	if ((rollIn > 0 && rollIn < 0) || (rollIn < 0  && rollIn > 0))
+	if ((newRoll > 0 && rollIn < 0) || (newRoll < 0  && rollIn > 0)) 
 		rollIn*=mod;
+
 	return newRoll + rollIn;
 }
 
@@ -47,6 +57,8 @@ static float pitchControl(float pitchError) {
 }
 
 static float pitchWallAvoid(float pitchIn, float distX) {
+	if(radio_control.values[ WALL_AVOID_RC_SWITCH ] < 0)
+		return pitchIn;
 	float newPitch = pitchControl(distX);
 	float mod = ((distX<0?-distX:distX)-FINKEN_SONAR_DIFF_GUARD_DIST)/(FINKEN_SONAR_DIFF_FREE_DIST-FINKEN_SONAR_DIFF_GUARD_DIST);
 	mod = mod<0?0:mod;

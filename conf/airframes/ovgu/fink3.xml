@@ -47,7 +47,9 @@
     <load name="finken_ir_adc.xml">
       <configure name="ADC_IR" value="ADC_3"/>
 		</load>
-    <load name="finken_wall_avoid.xml"/>
+		<load name="finken_wall_avoid.xml">
+			<configure name="WALL_AVOID_RC_SWITCH" value="RADIO_AUX3"/>
+	</load>
     <!--<load name="finken_rc_passthrough.xml"/>-->
 		<load name="logger_sd_spi_direct.xml">
 			<configure name="LOGGER_CONTROL_SWITCH" value="RADIO_AUX2"/>
