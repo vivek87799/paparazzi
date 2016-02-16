@@ -49,6 +49,9 @@
 		</load>
     <load name="finken_wall_avoid.xml"/>
     <!--<load name="finken_rc_passthrough.xml"/>-->
+		<load name="logger_sd_spi_direct.xml">
+			<configure name="LOGGER_CONTROL_SWITCH" value="RADIO_AUX2"/>
+		</load>
 </modules>
 
 	<section name="FINKEN_WALL_AVOID" prefix="FINKEN_WALL_AVOID_"/>

@@ -36,6 +36,8 @@
       <message name="GPS_INT"                  period="5.25"/>
       <!--<message name="PX4FLOW"                period="1"/>-->
 		</mode>
+		<mode name="empty">
+		</mode>
 
     <mode name="finken_data">
 		<message name="FINKEN_SENSOR_MODEL"      	period="0.3"/>
@@ -97,5 +99,16 @@
     </mode>
 
   </process>
+	<process name="Logger">
+    <mode name="default">
+      <message name="ROTORCRAFT_STATUS"      period="1.2"/>
+      <message name="DL_VALUE"               period="0.5"/>
+      <message name="ALIVE"                  period="2.1"/>
+      <message name="IMU_GYRO_SCALED"        period=".002"/>
+      <message name="IMU_ACCEL_SCALED"       period=".002"/>
+      <message name="IMU_MAG_SCALED"         period=".1"/>
+    </mode>
+  </process>
+
 
 </telemetry>
