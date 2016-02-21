@@ -8,12 +8,14 @@
 	<header>
 		#include "modules/finken_model/finken_model_actuators.h"
 		#include "modules/finken_model/finken_model_system.h"
+		#include "modules/pos_control/pos_control.h"
 		#include "subsystems/electrical.h"
 	</header>
 	<blocks>
 		<block name="default">
-			<set value="0" var="finken_system_model_control_height"/> 
-			<attitude pitch="0.0" roll="0.0" throttle="0.0" until="stage_time > 40" vmode="throttle" />
+			<set value="0" var="finken_system_model_control_height"/>
+			<set value="0" var="pos_control_start"/> 
+			<attitude pitch="0.0" roll="0.0" throttle="0.0" until="stage_time > 30" vmode="throttle" />
 			<deroute block="inair"/>
 		</block>
 
@@ -28,7 +30,8 @@
 		<block name="inair">
 			<set value="0.6" var="finken_system_set_point.z"/> 
 			<set value="1" var="finken_system_model_control_height"/> 
-			<attitude pitch="finken_actuators_set_point.pitch" roll="finken_actuators_set_point.roll" heading="finken_actuators_set_point.yaw" throttle="finken_actuators_set_point.thrust" until="60 > electrical.vsupply" vmode="throttle"/>
+			<set value="1" var="pos_control_start"/> 
+			<attitude pitch="finken_actuators_set_point.pitch" roll="finken_actuators_set_point.roll" heading="finken_actuators_set_point.yaw" throttle="finken_actuators_set_point.thrust" until="40 > electrical.vsupply" vmode="throttle"/>
 			<deroute block="empty"/>
 		</block>
 

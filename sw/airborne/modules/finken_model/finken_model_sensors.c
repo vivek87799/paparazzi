@@ -29,7 +29,6 @@
 
 #include "state.h"
 #include "subsystems/imu.h"
-#include "modules/sensor_filter/sensor_filter.h"
 
 //#ifdef USE_FLOW
 	#include "modules/optical_flow/px4flow.h"
@@ -54,6 +53,7 @@ static float leftBuf[BufSize];
 static float rightBuf[BufSize];
 static int i;
 static bool init;
+
 void finken_sensor_model_init(void)
 {
   i = 0;
@@ -80,13 +80,19 @@ void finken_sensor_model_periodic(void)
 #endif
 	//float newZ = ir_distance;
 
-  memcpy(&finken_sensor_model.rates, &imu.gyro, sizeof(struct Int32Rates));
-	/* x = y and y = x because of the coord. transformation from sensor to body coord. system */
+  //memcpy(&finken_sensor_model.rates, &imu.gyro, sizeof(struct Int32Rates));
+	/* pitch and roll are transformed into body coord. system */
+	finken_sensor_model.rates.p = imu.gyro.q; //pitch
+	finken_sensor_model.rates.q = imu.gyro.p; //roll
+	finken_sensor_model.rates.r = imu.gyro.r; //yaw
+
+	/* x = y and y = -x because of the coord. transformation from sensor to body coord. system */
 	finken_sensor_model.acceleration.x = imu.accel.y;
 	finken_sensor_model.acceleration.y = -imu.accel.x;
 	finken_sensor_model.acceleration.z = -imu.accel.z;
  // memcpy(&finken_sensor_model.acceleration, &imu.accel, sizeof(struct Int32Vect3));
 
+	
 #ifdef  USE_SONAR_TOWER
 	int newI = (i+1)%BufSize;
 	if( sonar_values.front < maxDist &&  sonar_values.front > minDist)
@@ -135,13 +141,14 @@ void finken_sensor_model_periodic(void)
 	}
 
 	memcpy(&finken_sensor_model.attitude, stateGetNedToBodyQuat_i(), sizeof(struct Int32Quat));
+
 	/* x = -y and y = x because of the coord. transformation from sensor to body coord. system */	
 #ifdef USE_FLOW
 	finken_sensor_model.velocity.x       = SPEED_BFP_OF_REAL(-optical_flow.flow_comp_m_y);
 	finken_sensor_model.velocity.y       = SPEED_BFP_OF_REAL(optical_flow.flow_comp_m_x);
 #endif
 
-
+	// position estimation with integrating the velocity
 	if (now_ms > last_ts) {
 		//fraction for position: 8, for speed 19 --> difference is 11
 		temp_mult = (((int64_t)finken_sensor_model.velocity.x / (1<<11)) * (now_ms - last_ts));
@@ -150,8 +157,8 @@ void finken_sensor_model_periodic(void)
 		temp_mult = (((int64_t)finken_sensor_model.velocity.y) * (now_ms - last_ts)) / (1<<11);
 		finken_sensor_model.pos.y += ((temp_mult / 1000));
 
-		last_ts = now_ms;
 	}
+	last_ts = now_ms;
 }
 
 void send_finken_hc_debug(struct transport_tx *trans, struct link_device* link) {

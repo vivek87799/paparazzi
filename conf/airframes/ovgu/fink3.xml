@@ -32,14 +32,16 @@
 		<!--define name="KILL_ON_GROUND_DETECT" value="TRUE"/-->
 	</firmware>
 	<modules>
-		<load name="sensor_filter.xml" />
+		<load name="pos_control.xml" >
+			<define name="POS_CONTROL" />
+		</load>
 		<load name="sonar_array_i2c.xml">
 			<define name="SONAR_I2C_DEV" value="i2c1"/>
 			<define name="USE_I2C1" />
 			<define name="I2C1_CLOCK_SPEED" value="5000" />
 		</load>
     	<load name="finken_model.xml" >
-			<define name="USE_SONAR_TOWER"/>
+			<!--<define name="USE_SONAR_TOWER"/>-->
 			<define name="USE_FLOW"/>
     	</load>
 		<load name="mavlink_decoder.xml">
@@ -51,7 +53,7 @@
       		<configure name="ADC_IR" value="ADC_3"/>
 		</load>
     <!--<load name="finken_wall_avoid.xml"/>-->
-	<load name="finken_rc_passthrough.xml"/>	
+	<!--<load name="finken_rc_passthrough.xml"/>-->	
 </modules>
 
 	<section name="FINKEN_WALL_AVOID" prefix="FINKEN_WALL_AVOID_"/>

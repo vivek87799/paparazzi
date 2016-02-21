@@ -1,0 +1,16 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="pos_control">
+  <doc>
+    <description>Module to control position and velocity</description>
+  </doc>
+  <header>
+    <file name="pos_control.h"/>
+  </header>
+  <init fun="pos_control_init()" />
+  <periodic fun="pos_control_periodic()" freq="30" />
+  <makefile>
+    <file name="pos_control.c"/>
+  </makefile>
+</module>
+

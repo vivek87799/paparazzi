@@ -5,24 +5,18 @@
   <process name="Main">
 
     <mode name="default" key_press="d">
-      <!--<message name="HC_DEBUG"      period="0.04" />-->
-			<!--<message name="FINKEN_SYSTEM_MODEL"      period="3" />-->
-      <message name="FINKEN_SENSOR_MODEL"      period="0.4" />
-	<message name="FINKEN_SYSTEM_SET_POINT"      period="0.4" />
-	<!--	
+       <message name="FINKEN_SENSOR_MODEL"      period="0.1" />
+      <message name="FINKEN_ACTUATORS_MODEL"   period="0.2" />
+      <message name="DL_VALUE"                 period="3"/>
+      <message name="ROTORCRAFT_STATUS"        period="2"/>
+      <message name="ROTORCRAFT_FP"            period="1"/>
+      <message name="ALIVE"                    period="2"/>
+      <message name="INS_REF"                  period="5"/>
+      <message name="ROTORCRAFT_NAV_STATUS"    period="1"/>
       <message name="WP_MOVED"                 period="5"/>
       <message name="INS"                      period="5"/>
-      <message name="UART_ERRORS"              period="5"/>
-      <message name="FINKEN_IR_ADC"            period="1"/>
-      <message name="INS_REF"                  period="5"/>
-      <message name="ROTORCRAFT_FP"            period="1"/>
-	-->
-      <message name="FINKEN_ACTUATORS_MODEL"   period="0.4" />
-      <message name="DL_VALUE"                 period="3"/>
-      <message name="ROTORCRAFT_STATUS"        period="3"/>
-      <message name="ALIVE"                    period="3"/>
-      <message name="ROTORCRAFT_NAV_STATUS"    period="3"/>
-      <message name="RC"            	       period="3"/>
+      <message name="RC"            	       period="0.5"/>
+      <message name="I2C_ERRORS"               period="4.1"/>
 		</mode>
 		<mode name="extended">
       <message name="FINKEN_SENSOR_MODEL"      period="2.0" />
@@ -44,13 +38,6 @@
 			<message name="GPS_INT"                  period="5.25"/>
       <message name="PX4FLOW"                period="1"/>
 		</mode>
-
-    <mode name="finken_data">
-		<message name="FINKEN_SENSOR_MODEL"      	period="0.3"/>
-		<message name="FINKEN_SYSTEM_SET_POINT"     period="0.3" />
-		<message name="INS"                     	period="0.3"/>
-    </mode>
-
     <mode name="ppm">
       <message name="ROTORCRAFT_CMD"           period=".05"/>
       <message name="PPM"                      period="0.5"/>

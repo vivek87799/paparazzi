@@ -34,81 +34,6 @@
 
 #include "subsystems/datalink/downlink.h"
 
-/*
- *	P and D gains for the velocity control in x and y direction
- */
-#ifndef FINKEN_VELOCITY_X_P
-#define FINKEN_VELOCITY_X_P 10
-#endif
-
-#ifndef FINKEN_VELOCITY_Y_P
-#define FINKEN_VELOCITY_Y_P 10
-#endif
-
-#ifndef FINKEN_VELOCITY_X_D
-#define FINKEN_VELOCITY_X_D 0
-#endif
-
-#ifndef FINKEN_VELOCITY_Y_D
-#define FINKEN_VELOCITY_Y_D 0
-#endif
-
-/*
- *	P and D gains for the position control in x and y direction
- */
-
-#ifndef FINKEN_POSITION_X_P
-#define FINKEN_POSITION_X_P 25
-#endif
-
-#ifndef FINKEN_POSITION_Y_P
-#define FINKEN_POSITION_Y_P 15
-#endif
-
-#ifndef FINKEN_POSITION_X_D
-#define FINKEN_POSITION_X_D 2
-#endif
-
-#ifndef FINKEN_POSITION_Y_D
-#define FINKEN_POSITION_Y_D 1.6
-#endif
-
-/*
- *	constant to enable/disable velocity controller
- */
-#ifndef FINKEN_VELOCITY_CONTROL_MODE
-#define FINKEN_VELOCITY_CONTROL_MODE 0
-#endif
-
-/*
- *	desired velocity in x and y direction (m/sec)
- */
-#ifndef FINKEN_VELOCITY_DESIRED_X
-#define FINKEN_VELOCITY_DESIRED_X 0.0	// m/sec
-#endif
-
-#ifndef FINKEN_VELOCITY_DESIRED_Y
-#define FINKEN_VELOCITY_DESIRED_Y 0.0	// m/sec
-#endif
-
-/*
- *	constant to enable/disable position controller
- */
-#ifndef FINKEN_POSITION_CONTROL_MODE
-#define FINKEN_POSITION_CONTROL_MODE 1	//2: Circle, 1: position control
-#endif
-
-/*
- *	desired position in x and y direction (m)
- */
-#ifndef FINKEN_POSITION_DESIRED_X
-#define FINKEN_POSITION_DESIRED_X 0.0	// m
-#endif
-
-#ifndef FINKEN_POSITION_DESIRED_Y
-#define FINKEN_POSITION_DESIRED_Y 0.3	// m
-#endif
-
 #define T 1.0f/FINKEN_SYSTEM_UPDATE_FREQ
 #define T1 FINKEN_HEIGHT_CONTROL_DELAY_TIME
 #define Tn FINKEN_HEIGHT_CONTROL_FOLLOW_TIME
@@ -129,32 +54,12 @@ float thrust_k_dec2 = 0.0;
 float error_z_k_dec1 = 0.0;
 float error_z_k_dec2 = 0.0;
 
-float error_vx_p = 0.0;
-float error_vy_p = 0.0;
-float error_vx_d = 0.0;
-float error_vy_d = 0.0;
-
 static const float maxRCRoll       = 20.0f;
 static const float maxRCPitch      = 20.0f;
 static const float maxRCYaw        = 20.0f;
 static const float deadRCRoll      =  1.0f;
 static const float deadRCPitch     =  1.0f;
 static const float deadRCYaw       =  1.0f;
-
-float error_px_p = 0.0;
-float error_py_p = 0.0;
-float error_px_d = 0.0;
-float error_py_d = 0.0;
-
-float velocity_change_x = 0.0;
-float velocity_change_y = 0.0;
-float last_velocity_x = 0.0;
-float last_velocity_y = 0.0;
-
-float set_point_position_x = 0.0;
-float set_point_position_y = 0.0;
-
-uint16_t step = 0;
 
 void finken_system_model_init(void) {
   finken_system_set_point.z          = 0.0;
@@ -163,8 +68,6 @@ void finken_system_model_init(void) {
   finken_system_set_point.pitch      = 0.0;
 
 	finken_system_model_control_height = 0;
-	finken_system_set_point.velocity_x = FINKEN_VELOCITY_DESIRED_Y;
-	finken_system_set_point.velocity_y = FINKEN_VELOCITY_DESIRED_X;
 
   register_periodic_telemetry(DefaultPeriodic, "FINKEN_SYSTEM_SET_POINT", send_finken_system_set_point_telemetry);
 
@@ -216,83 +119,11 @@ void finken_system_model_periodic(void)
 		finken_actuators_set_point.thrust = FINKEN_THRUST_DEFAULT + thrust_k / 100;
 	}
 
-	/*
-	*	Velocity or position controller
-	*/
-
-	if(FINKEN_VELOCITY_CONTROL_MODE)	{
-
-		velocity_change_x = last_velocity_x - finken_sensor_model.velocity.x;
-		velocity_change_y = last_velocity_y - finken_sensor_model.velocity.y;
-
-		error_vx_p = (finken_system_set_point.velocity_x - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x)) * FINKEN_VELOCITY_X_P;
-		error_vy_p = (finken_system_set_point.velocity_y - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y)) * FINKEN_VELOCITY_Y_P;
-		error_vx_d = (0 - ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.x)) * FINKEN_VELOCITY_X_D;	//constant velocity
-		error_vy_d = (0 - ACCEL_FLOAT_OF_BFP(finken_sensor_model.acceleration.y)) * FINKEN_VELOCITY_Y_D;	//constant velocity
-
-		finken_actuators_set_point.pitch += -error_vx_p - error_vx_d;
-		if (finken_actuators_set_point.pitch > 20.0f)
-			finken_actuators_set_point.pitch = 20.0f;
-		else if (finken_actuators_set_point.pitch < -20.0f)
-			finken_actuators_set_point.pitch = -20.0f;
-		finken_actuators_set_point.roll += error_vy_p + error_vy_d;
-		if (finken_actuators_set_point.roll > 20.0f)
-			finken_actuators_set_point.roll = 20.0f;
-		else if (finken_actuators_set_point.roll < -20.0f)
-			finken_actuators_set_point.roll = -20.0f;
-
-
-		last_velocity_x = finken_sensor_model.velocity.x;
-		last_velocity_y = finken_sensor_model.velocity.y;
-
-	} else if(FINKEN_POSITION_CONTROL_MODE)	{
- 		switch(FINKEN_POSITION_CONTROL_MODE) {
- 			case 2:
- 				// when the quadcopter reaches the start position (x = 1m, y = 0m), start flying in a circle
- 				// 10% deviation from the set value is accepted
- 				if(step == 0)	{
- 					if((finken_sensor_model.pos.x < 0.9 || finken_sensor_model.pos.x > 1.1) && (finken_sensor_model.pos.y < -0.1 || finken_sensor_model.pos.y > 0.1))	{
- 					set_point_position_x = 1;
- 					set_point_position_y = 0;
- 					break;
- 					}
- 				}
- 				step++;
- 				set_point_position_x = cos(step*6/FINKEN_SYSTEM_UPDATE_FREQ);
- 				set_point_position_y = sin(step*6/FINKEN_SYSTEM_UPDATE_FREQ);
- 				break;
- 			case 1:
- 				set_point_position_x = FINKEN_POSITION_DESIRED_X;	
- 				set_point_position_y = FINKEN_POSITION_DESIRED_Y;
- 				break;
- 			default:
- 				break;
- 		}
- 		error_px_p = (0 - POS_FLOAT_OF_BFP(finken_sensor_model.pos.x)) * FINKEN_POSITION_X_P;
- 		error_py_p = (set_point_position_y - POS_FLOAT_OF_BFP(finken_sensor_model.pos.y)) * FINKEN_POSITION_Y_P;//FINKEN_POSITION_Y_P;
- 		error_px_d = (0 - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.x)) * FINKEN_POSITION_X_D;	//zero velocity
- 		error_py_d = (0 - SPEED_FLOAT_OF_BFP(finken_sensor_model.velocity.y)) * FINKEN_POSITION_Y_D;	//zero velocity
- 
- 		finken_actuators_set_point.pitch = -error_px_p - error_px_d; //  error_px_d;
- 		if (finken_actuators_set_point.pitch > 20.0f)
- 			finken_actuators_set_point.pitch = 20.0f;
- 		else if (finken_actuators_set_point.pitch < -20.0f)
- 			finken_actuators_set_point.pitch = -20.0f;
-
- 		finken_actuators_set_point.roll = error_py_p + error_py_d;
- 		if (finken_actuators_set_point.roll > 20.0f)
- 			finken_actuators_set_point.roll = 20.0f;
- 		else if (finken_actuators_set_point.roll < -20.0f)
- 			finken_actuators_set_point.roll = -20.0f;
-  } else	{
-
+#ifdef POS_CONTROL
+#else
 	finken_actuators_set_point.pitch = rcPitch;
 	finken_actuators_set_point.roll = rcRoll;
-
-	}
-
-finken_actuators_set_point.pitch = -15.0;
-	
+#endif
 	// TODO: Theta
 }
 
@@ -305,7 +136,7 @@ void send_finken_system_set_point_telemetry(struct transport_tx *trans, struct l
     DefaultDevice,
 		&finken_system_set_point.pitch,
 		&finken_system_set_point.roll,
-		&set_point_position_x,
-		&set_point_position_y
+		&finken_system_set_point.velocity_x,
+		&finken_system_set_point.velocity_y
   );
 }
