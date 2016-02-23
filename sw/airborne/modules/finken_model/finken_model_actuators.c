@@ -49,14 +49,54 @@ void finken_actuators_model_periodic(void) {
 	finken_actuators_model.yaw    = finken_actuators_set_point.yaw;
 	finken_actuators_model.thrust = compensate_battery_drop(finken_actuators_set_point.thrust);
 }
+float compensate_battery_drop_on_start(float thrust) {
+	float defVoltage = 121;
+	
+	//float defThrust = finken_actuators_set_point.thrust; // TODO: Default Thrust
+	float currVoltage = electrical.vsupply;
 
-float compensate_battery_drop(float thrust_setpoint) {
-	float thrust = thrust_setpoint + (FINKEN_THRUST_LOW - FINKEN_THRUST_DEFAULT) * (84 - electrical.vsupply) / (84 - 65);
-	if(thrust < 0.2)
-		return 0.2;
-	else if(thrust > 1.0)
-		return 1.0;
-	return thrust;
+	if (currVoltage > 121 )
+		return 0.36;
+	else if (currVoltage < 105)
+		return thrust;
+	
+	float perzVloss = 1 - (currVoltage/defVoltage);
+	
+	float a1 = 37.854887;
+	float a2 = -8.288718;
+	float a3 = 2.542685;
+	float a4 = 0.049967;
+
+	float perz = (a1* perzVloss * perzVloss * perzVloss) + (a2 * perzVloss * perzVloss) + a3 * perzVloss + a4;
+
+	float comp_thrust = thrust + (thrust * perz);
+
+	return comp_thrust;
+}
+
+float compensate_battery_drop(float thrust) {
+	float defVoltage = 121;
+	
+	//float defThrust = finken_actuators_set_point.thrust; // TODO: Default Thrust
+	float currVoltage = electrical.vsupply;
+
+	if (currVoltage > 121 )
+		return thrust;
+	else if (currVoltage < 105)
+		return thrust;
+	
+	float perzVloss = 1 - (currVoltage/defVoltage);
+	
+	float a1 = 37.854887;
+	float a2 = -8.288718;
+	float a3 = 2.542685;
+	float a4 = 0.049967;
+
+	float perz = (a1* perzVloss * perzVloss * perzVloss) + (a2 * perzVloss * perzVloss) + a3 * perzVloss + a4;
+
+	float comp_thrust = thrust + (thrust * perz);
+
+	return comp_thrust;
 }
 void send_finken_actuators_model_telemetry(struct transport_tx *trans, struct link_device* link)
 {
