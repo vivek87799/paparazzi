@@ -27,6 +27,7 @@
 #include "mcu_periph/uart.h"
 #include "messages.h"
 #include "subsystems/datalink/downlink.h"
+#include "subsystems/radio_control.h"
 
 /** Sonar offset.
  *  Offset value in m (float)
@@ -158,7 +159,19 @@ static uint16_t sonar_read(enum Sonars sonar)
 /** Read I2C value to update sonar measurement and request new value
  */
 void sonar_array_i2c_periodic(void) {
-#ifndef SITL
+#ifndef DISABLE_SONAR_IN_RC_PASSTHROUGH
+#define DISABLE_SONAR_IN_RC_PASSTHROUGH 0
+#endif
+
+#if DISABLE_SONAR_IN_RC_PASSTHROUGH
+	if(radio_control.values[ WALL_AVOID_RC_SWITCH ] < 0) {
+		for (unsigned int i = SONAR_START; i < SONAR_END; i++) {
+			setSonarValue(i, FINKEN_SONAR_MAX_DIST);
+		}
+		return;
+	}
+
+#endif
 	enum Sonars read_sonar = current_sonar;
 	enum Sonars fetch_sonar = (current_sonar+1)%SONAR_END;
 	enum Sonars range_sonar = (current_sonar+3)%SONAR_END;
@@ -168,9 +181,6 @@ void sonar_array_i2c_periodic(void) {
 	sonar_start_read(fetch_sonar);
 	sonar_start_ranging(range_sonar);
 	current_sonar = fetch_sonar;
-#else // SITL
-#warn "SITL not implemented for sonar_array_i2c yet"
-#endif // SITL
 }
 
 void send_sonar_array_telemetry(struct transport_tx *trans, struct link_device *link)

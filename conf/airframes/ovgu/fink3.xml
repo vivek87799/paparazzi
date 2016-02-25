@@ -13,6 +13,7 @@
 				<define name="RADIO_CONTROL_SPEKTRUM_OLD_SIGNS"/>
 				<define name="RADIO_MODE" value="RADIO_FLAP"/>
 				<define name="RADIO_KILL_SWITCH" value="RADIO_GEAR"/>
+				<define name="WALL_AVOID_RC_SWITCH" value="RADIO_AUX3"/>
 
 			</subsystem>
 		</target>
@@ -40,6 +41,7 @@
 			<define name="SONAR_I2C_DEV" value="i2c1"/>
 			<define name="USE_I2C1" />
 			<define name="I2C1_CLOCK_SPEED" value="5000" />
+			<define name="DISABLE_SONAR_IN_RC_PASSTHROUGH" value="TRUE"/>
 		</load>
 		<load name="finken_model.xml" >
 			<define name="USE_SONAR_TOWER"/>
@@ -49,9 +51,7 @@
 		<load name="finken_ir_adc.xml">
 			<configure name="ADC_IR" value="ADC_3"/>
 		</load>
-		<load name="finken_wall_avoid.xml">
-			<configure name="WALL_AVOID_RC_SWITCH" value="RADIO_AUX3"/>
-		</load>
+		<load name="finken_wall_avoid.xml"/>
 		<load name="ws2801.xml"/>
 		<!--<load name="finken_rc_passthrough.xml"/>-->
 		<load name="logger_sd_spi_direct.xml">
