@@ -110,10 +110,15 @@ enum Errors ws2801_setColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b) {
 }
 
 int ws2801_activateLeds(void){
+	colorBuffer[0][R]=255;
 	colorBuffer[0][G]=255;
+	colorBuffer[0][B]=255;
+	colorBuffer[1][R]=255;
 	colorBuffer[1][G]=255;
+	colorBuffer[1][B]=255;
 	colorBuffer[2][R]=255;
-	colorBuffer[3][R]=255;
+	colorBuffer[2][G]=255;
+	colorBuffer[2][B]=255;
 	start();
 	return 0;
 }
