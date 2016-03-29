@@ -52,7 +52,6 @@ void finken_actuators_model_periodic(void) {
 float compensate_battery_drop_on_start(float thrust) {
 	float defVoltage = 121;
 	
-	//float defThrust = finken_actuators_set_point.thrust; // TODO: Default Thrust
 	float currVoltage = electrical.vsupply;
 
 	if (currVoltage > 121 )
@@ -75,17 +74,16 @@ float compensate_battery_drop_on_start(float thrust) {
 }
 
 float compensate_battery_drop(float thrust) {
-	float defVoltage = 121;
+	float defVoltage = 121;					
 	
-	//float defThrust = finken_actuators_set_point.thrust; // TODO: Default Thrust
-	float currVoltage = electrical.vsupply;
+	float currVoltage = electrical.vsupply;			// cast electrical.vsupply to float to avoid errors by integer division
 
-	if (currVoltage > 121 )
-		return thrust;
+	if (currVoltage > 121 )					
+		return thrust;					// return the current thrust because function maybe have unenspected
 	else if (currVoltage < 105)
-		return thrust;
+		return thrust;					// return the current thrust because function maybe have unenspected
 	
-	float perzVloss = 1 - (currVoltage/defVoltage);
+	float perzVloss = 1 - (currVoltage/defVoltage);		
 	
 	float a1 = 37.854887;
 	float a2 = -8.288718;
