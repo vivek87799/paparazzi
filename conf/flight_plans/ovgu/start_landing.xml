@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<!--<DOCTYPE flight_plan SYSTEM "../flight_plan.dtd">-->
+
+<flight_plan NAME="Fink" LON0="1.27289" MAX_DIST_FROM_HOME="1000" GROUND_ALT="185" SECURITY_HEIGHT="25" QFU="270" ALT="250" LAT0="43.46223">
+  <waypoints>
+    <waypoint name="HOME" x="0.0" y="120.0" alt="250."/>
+  </waypoints>
+	<header>
+		#include "modules/finken_model/finken_model_actuators.h"
+		#include "modules/finken_model/finken_model_system.h"
+		#include "subsystems/electrical.h"
+		#include "modules/finken_model/finken_model_sensors.h"
+	</header>
+	<blocks>
+		<block name="default">
+			<set value="0" var="finken_system_model_control_height"/> 
+			<attitude pitch="0.0" roll="0.0" throttle="0.0" until="stage_time > 15" vmode="throttle" />
+			<deroute block="start"/>
+		</block>
+
+		<block name="start">
+			<set value="0.6" var="finken_system_set_point.z"/> 
+			<set value="0" var="finken_system_model_control_height"/> 
+			<attitude pitch="finken_actuators_set_point.pitch" roll="finken_actuators_set_point.roll" yaw="finken_actuators_set_point.yaw" throttle="compensate_battery_drop_on_start(0.34287)" 				until="pos_z > 0.5" vmode="throttle"/>
+			<deroute block="inair"/>
+		</block> 
+
+	<block name="inair">
+			<set value="0.6" var="finken_system_set_point.z"/> 
+			<set value="1" var="finken_system_model_control_height"/> 
+			<attitude pitch="finken_actuators_set_point.pitch" roll="finken_actuators_set_point.roll" yaw="finken_actuators_set_point.yaw" throttle="compensate_battery_drop(finken_actuators_set_point.thrust)" until="105 > electrical.vsupply" vmode="throttle"/>
+			<deroute block="landing"/>
+		</block>
+
+	<block name="landing">
+			<set value="0" var="finken_system_model_control_height"/> 
+			<attitude pitch="finken_actuators_set_point.pitch" roll="finken_actuators_set_point.roll" yaw="finken_actuators_set_point.yaw" throttle="compensate_battery_drop(0.32-0.015)" 				until="0.25>pos_z" vmode="throttle"/>
+			<deroute block="empty"/>
+		</block>
+
+		<block name="empty">
+			<set value="0" var="finken_system_model_control_height"/> 
+			<attitude pitch="0.0" roll="0.0" yaw="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+		</block>
+
+  </blocks>
+</flight_plan>
+
