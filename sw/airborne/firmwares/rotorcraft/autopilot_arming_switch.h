@@ -100,7 +100,7 @@ static inline void autopilot_arming_check_motors_on(void)
         break;
       }
       else if (THROTTLE_STICK_DOWN() && rc_attitude_sticks_centered() &&
-               (autopilot_mode == MODE_MANUAL || autopilot_unarmed_in_auto)) {
+               (autopilot_mode == MODE_MANUAL || autopilot_mode == MODE_AUTO1 || autopilot_mode == MODE_AUTO2 || autopilot_unarmed_in_auto)) {
         autopilot_arming_state = STATE_MOTORS_ON;
       }
       break;
