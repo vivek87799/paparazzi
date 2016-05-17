@@ -43,6 +43,7 @@ uint32_t last_ts;
 
 static const float maxZ    = FINKEN_MAX_Z;
 static const float minZ    = FINKEN_MIN_Z;
+float pos_z;
 
 void finken_sensor_model_init(void)
 {
@@ -93,6 +94,8 @@ void finken_sensor_model_periodic(void)
   	finken_sensor_model.pos.z = POS_BFP_OF_REAL(newZ);
 	}
 
+	pos_z      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
+
 	memcpy(&finken_sensor_model.attitude, stateGetNedToBodyQuat_i(), sizeof(struct Int32Quat));
 	/* x = -y and y = x because of the coord. transformation from sensor to body coord. system */	
 #ifdef USE_FLOW
@@ -116,7 +119,7 @@ void finken_sensor_model_periodic(void)
 void send_finken_hc_debug(struct transport_tx *trans, struct link_device* link) {
 	trans=trans;
 	link=link;
-	float pos_z = POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
+	
   DOWNLINK_SEND_HC_DEBUG(
     DefaultChannel,
     DefaultDevice,
@@ -136,7 +139,7 @@ void send_finken_sensor_model_telemetry(struct transport_tx *trans, struct link_
 
 	float pos_x      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.x);
 	float pos_y      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.y);
-	float pos_z      = POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
+
 	float pos_pitch  = ANGLE_FLOAT_OF_BFP(attitude.theta);
 	float pos_roll   = ANGLE_FLOAT_OF_BFP(attitude.phi);
 	float pos_yaw    = ANGLE_FLOAT_OF_BFP(attitude.psi);
