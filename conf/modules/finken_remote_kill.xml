@@ -1,0 +1,17 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="finken_remote_kill">
+  <doc>
+    <description>
+      Remotely kill the copter using IVY "KILL" messages.
+    </description>
+  </doc>
+  <header>
+    <file name="finken_remote_kill.h" />
+  </header>
+  <init fun="finken_remote_kill_init()" />
+  <datalink message="KILL" fun="finken_remote_kill_action()"/>
+  <makefile>
+    <file name="finken_remote_kill.c" />
+  </makefile>
+</module>
