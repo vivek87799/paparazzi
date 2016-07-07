@@ -82,11 +82,11 @@ float thrust_k_dec2 = 0.0;
 float error_z_k_dec1 = 0.0;
 float error_z_k_dec2 = 0.0;
 
-static const float maxRCRoll       =  5.0f;
-static const float maxRCPitch      =  5.0f;
+static const float maxRCRoll       =  10.0f;
+static const float maxRCPitch      =  10.0f;
 static const float maxRCYaw        = 20.0f;
-static const float deadRCRoll      =  1.0f;
-static const float deadRCPitch     =  1.0f;
+static const float deadRCRoll      =  0.0f;
+static const float deadRCPitch     =  0.0f;
 static const float deadRCYaw       =  1.0f;
 
 /*float error_x_p = 0.0;
@@ -120,15 +120,15 @@ void finken_system_model_periodic(void)
 	float rcPitch = (float) radio_control.values[RADIO_PITCH] / 13000.0 * maxRCPitch;
 	float rcYaw   = (float) radio_control.values[RADIO_YAW] / 13000.0 * maxRCYaw;
 
-	rcRoll = (rcRoll < -maxRCPitch) ? -maxRCPitch : rcRoll;
-	rcRoll = (rcRoll > maxRCPitch)  ?  maxRCPitch : rcRoll;
-	rcRoll = (rcRoll< deadRCPitch && rcRoll > -deadRCPitch) ? 0.0f : rcRoll;
+	rcRoll = (rcRoll < -maxRCRoll) ? -maxRCRoll : rcRoll;
+	rcRoll = (rcRoll > maxRCRoll)  ?  maxRCRoll : rcRoll;
+	rcRoll = (rcRoll< deadRCRoll && rcRoll > -deadRCRoll) ? 0.0f : rcRoll;
 	rcPitch = (rcPitch < -maxRCPitch) ? -maxRCPitch : rcPitch;
 	rcPitch = (rcPitch > maxRCPitch)  ?  maxRCPitch : rcPitch;
 	rcPitch = (rcPitch< deadRCPitch && rcPitch > -deadRCPitch) ? 0.0f : rcPitch;
 	rcYaw = (rcYaw < deadRCYaw && rcYaw > -deadRCYaw) ? 0.0f : rcYaw;
 	rcYaw = (rcYaw > maxRCYaw) ? maxRCYaw : rcYaw;
-	rcYaw = (rcYaw < -maxRCYaw) ? maxRCYaw : rcYaw;
+	rcYaw = (rcYaw < -maxRCYaw) ? -maxRCYaw : rcYaw;
 	
 	float error_z_k = finken_system_set_point.z - POS_FLOAT_OF_BFP(finken_sensor_model.pos.z);
 

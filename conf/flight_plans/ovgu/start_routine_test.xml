@@ -9,20 +9,13 @@
 		#include "modules/finken_model/finken_model_actuators.h"
 		#include "modules/finken_model/finken_model_system.h"
 		#include "subsystems/electrical.h"
-		#include "modules/ws2801/ws2801.h"
+		#include "modules/finken_model/finken_model_sensors.h"
 	</header>
 	<blocks>
 		<block name="default">
 			<set value="0" var="finken_system_model_control_height"/> 
-			<call fun="ws2801_deactivateLeds()"/>
 			<attitude pitch="0.0" roll="0.0" throttle="0.0" until="stage_time > 15" vmode="throttle" />
 			<deroute block="start"/>
-		</block>
-
-		<block name="empty">
-			<call fun="ws2801_deactivateLeds()"/>
-			<set value="0" var="finken_system_model_control_height"/> 
-			<attitude pitch="0.0" roll="0.0" yaw="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
 		</block>
 
 		<block name="start">
@@ -35,17 +28,21 @@
 	<block name="inair">
 			<set value="0.6" var="finken_system_set_point.z"/> 
 			<set value="1" var="finken_system_model_control_height"/> 
-			<call fun="ws2801_activateLeds()"/>
 			<attitude pitch="finken_actuators_set_point.pitch" roll="finken_actuators_set_point.roll" yaw="finken_actuators_set_point.yaw" throttle="compensate_battery_drop(finken_actuators_set_point.thrust)" until="105 > electrical.vsupply" vmode="throttle"/>
 			<deroute block="landing"/>
 		</block>
 
 	<block name="landing">
 			<set value="0" var="finken_system_model_control_height"/> 
-			<call fun="ws2801_deactivateLeds()"/>
 			<attitude pitch="finken_actuators_set_point.pitch" roll="finken_actuators_set_point.roll" yaw="finken_actuators_set_point.yaw" throttle="compensate_battery_drop(0.32-0.015)" 				until="0.25>pos_z" vmode="throttle"/>
 			<deroute block="empty"/>
 		</block>
+
+		<block name="empty">
+			<set value="0" var="finken_system_model_control_height"/> 
+			<attitude pitch="0.0" roll="0.0" yaw="0.0" throttle="0.0" until="FALSE" vmode="throttle"/>
+		</block>
+
   </blocks>
 </flight_plan>
 

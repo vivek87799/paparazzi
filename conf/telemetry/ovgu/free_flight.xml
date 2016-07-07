@@ -9,6 +9,7 @@
       <message name="FINKEN_ACTUATORS_MODEL"   period="0.2" />
       <message name="DL_VALUE"                 period="3"/>
       <message name="ROTORCRAFT_STATUS"        period="2"/>
+      <message name="FINKEN_ACTUATORS_SET_POINT" period="0.1"/>
       <message name="ROTORCRAFT_FP"            period="1"/>
       <message name="ALIVE"                    period="2"/>
       <message name="INS_REF"                  period="10"/>

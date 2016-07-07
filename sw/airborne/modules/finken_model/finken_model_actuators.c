@@ -50,13 +50,60 @@ void finken_actuators_model_periodic(void) {
 	finken_actuators_model.thrust = compensate_battery_drop(finken_actuators_set_point.thrust);
 }
 
-float compensate_battery_drop(float thrust_setpoint) {
-	float thrust = thrust_setpoint + (FINKEN_THRUST_LOW - FINKEN_THRUST_DEFAULT) * (84 - electrical.vsupply) / (84 - 65);
-	if(thrust < 0.2)
-		return 0.2;
-	else if(thrust > 1.0)
-		return 1.0;
-	return thrust;
+/** 
+	This function is similar to the compensate_battery_drop function below. It just returns a fix value, if the electrical.vsupply > 121.
+*/
+float compensate_battery_drop_on_start(float thrust) {
+	float defVoltage = 121;
+	
+	float currVoltage = electrical.vsupply;
+
+	if (currVoltage > 121 )
+		return 0.36;
+	else if (currVoltage < 105)
+		return thrust;
+	
+	float percentageVloss = 1 - (currVoltage/defVoltage);
+	
+	float a1 = 37.854887;
+	float a2 = -8.288718;
+	float a3 = 2.542685;
+	float a4 = 0.049967;
+
+	float percentage = (a1* percentageVloss * percentageVloss * percentageVloss) + (a2 * percentageVloss * percentageVloss) + a3 * percentageVloss + a4;
+
+	float comp_thrust = thrust + (thrust * percentage);
+
+	return comp_thrust;
+}
+/** 
+	This function calculates the needed thrust at any given battery voltage.
+*/
+float compensate_battery_drop(float thrust) {
+	float defVoltage = 121;					
+	
+	float currVoltage = electrical.vsupply;			// cast electrical.vsupply to float to avoid errors by integer division
+
+	if (currVoltage > 121 )					
+		return thrust;					// return the current thrust because function is based on values from 12,1V to 10,5V
+	else if (currVoltage < 105)
+		return thrust;					// return the current thrust because function is based on values from 12,1V to 10,5V
+	
+	float percentageVloss = 1 - (currVoltage/defVoltage);	// calculation of lost voltage in percent
+	
+	// Polynomcoefficients calculated by battery drop depandaning on the thrust
+	float a1 = 37.854887;
+	float a2 = -8.288718;
+	float a3 = 2.542685;
+	float a4 = 0.049967;
+	
+	// Polynomial calculation of additionally needed percentage of thrust
+	float percentage = (a1* percentageVloss * percentageVloss * percentageVloss) + (a2 * percentageVloss * percentageVloss) + a3 * percentageVloss + a4;
+
+	// adding of the additionally needed thrust	
+	float comp_thrust = thrust + (thrust * percentage);
+
+	return comp_thrust;
 }
 void send_finken_actuators_model_telemetry(struct transport_tx *trans, struct link_device* link)
 {
