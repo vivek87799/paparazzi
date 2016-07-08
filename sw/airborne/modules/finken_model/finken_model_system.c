@@ -116,9 +116,9 @@ void finken_system_model_init(void) {
 
 void finken_system_model_periodic(void)
 {	
-	float rcRoll  = (float) radio_control.values[RADIO_ROLL] / 13000.0 * maxRCRoll;
-	float rcPitch = (float) radio_control.values[RADIO_PITCH] / 13000.0 * maxRCPitch;
-	float rcYaw   = (float) radio_control.values[RADIO_YAW] / 13000.0 * maxRCYaw;
+	float rcRoll  = (float) radio_control.values[RADIO_ROLL] / 13000.0 * maxRCRoll + calParamsRoll;
+	float rcPitch = (float) radio_control.values[RADIO_PITCH] / 13000.0 * maxRCPitch + calParamsPitch;
+	float rcYaw   = (float) radio_control.values[RADIO_YAW] / 13000.0 * maxRCYaw + calParamsYaw;
 
 	rcRoll = (rcRoll < -maxRCRoll) ? -maxRCRoll : rcRoll;
 	rcRoll = (rcRoll > maxRCRoll)  ?  maxRCRoll : rcRoll;
