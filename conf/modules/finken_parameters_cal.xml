@@ -1,0 +1,18 @@
+
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="finken_parameters_cal">
+  <doc>
+    <description>
+        Remotelly control the copter Pitch, Roll and Yaw using IVY and Calibration node.
+    </description>
+  </doc>
+  <header>
+    <file name="finken_parameters_cal.h" />
+  </header>
+  <init fun="finken_parameters_cal_init()" />
+  <datalink message="CALPARAMS" fun="finken_parameters_cal_action()"/>
+  <makefile>
+    <file name="finken_parameters_cal.c" />
+  </makefile>
+</module>
