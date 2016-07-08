@@ -50,7 +50,7 @@ static inline void autopilot_arming_init(void)
 {
   autopilot_arming_state = STATE_UNINIT;
   autopilot_arming_delay_counter = 0;
-  autopilot_unarmed_in_auto = FALSE;
+  autopilot_unarmed_in_auto = TRUE;
 }
 
 static inline void autopilot_arming_set(bool_t motors_on)
