@@ -3,15 +3,16 @@
 
 enum Axes {X, Y};
 
-struct sonar_values_s sonar_filtered_values;
-struct sonar_diff_s sonar_filtered_diff_values;
+uint16_t sonar_filtered_values[SONAR_END];
+int16_t sonar_filtered_diff_values[2];
 
 static int lpI, lpA;
 static uint16_t lowPassBuf[SONAR_END][FINKEN_SONAR_LOW_PASS_SIZE];
 static int16_t lowPassDiff[2][FINKEN_SONAR_DIFF_LOW_PASS_SIZE];
 
 static void setSonarFilterValue(enum Sonars sonar, uint16_t value) {
-	switch (sonar) {
+	sonar_filtered_values[sonar] = value;
+	/*switch (sonar) {
 	case (SONAR_FRONT):
 		sonar_filtered_values.front = value;
 		break;
@@ -26,17 +27,18 @@ static void setSonarFilterValue(enum Sonars sonar, uint16_t value) {
 		break;
 	default:
 		break;
-	}
+	}*/
 }
 
 static uint16_t getSonarValue(enum Sonars sonar) {
-	switch (sonar) {
+	return sonar_values[sonar];
+	/*switch (sonar) {
 	case (SONAR_FRONT): return sonar_values.front;
 	case (SONAR_RIGHT): return sonar_values.right;
 	case (SONAR_BACK ): return sonar_values.back;
 	case (SONAR_LEFT ): return sonar_values.left;
 	default:            return FINKEN_SONAR_MAX_DIST;
-	}
+	}*/
 }
 
 static uint16_t rangeFilter(uint16_t value) {
@@ -95,8 +97,16 @@ void finken_sonar_filter_periodic(void) {
 		value = lowPassFilter(sonar, value);
 		setSonarFilterValue(sonar, value);
 	}
-	int16_t x = diffRangeFilter(sonar_filtered_values.back, sonar_filtered_values.front);
-	int16_t y = diffRangeFilter(sonar_filtered_values.right, sonar_filtered_values.left);
-	sonar_filtered_diff_values.x = diffLowPassFilter(X, x);
-	sonar_filtered_diff_values.y = diffLowPassFilter(Y, y);
+	uint32_t virtFront = 2*sonar_filtered_values[SONAR_FRONT] + sonar_filtered_values[SONAR_FRONT_LEFT] + sonar_filtered_values[SONAR_FRONT_RIGHT];
+	virtFront /=4;
+	uint32_t virtBack  = 2*sonar_filtered_values[SONAR_BACK] + sonar_filtered_values[SONAR_BACK_LEFT] + sonar_filtered_values[SONAR_BACK_RIGHT];
+	virtBack /=4;
+	uint32_t virtLeft  = 2*sonar_filtered_values[SONAR_LEFT] + sonar_filtered_values[SONAR_FRONT_LEFT] + sonar_filtered_values[SONAR_BACK_LEFT];
+	virtLeft /=4;
+	uint32_t virtRight = 2*sonar_filtered_values[SONAR_RIGHT] + sonar_filtered_values[SONAR_FRONT_RIGHT] + sonar_filtered_values[SONAR_BACK_RIGHT];
+	virtRight /=4;
+	int16_t x = diffRangeFilter(virtBack, virtFront);
+	int16_t y = diffRangeFilter(virtRight, virtLeft);
+	sonar_filtered_diff_values[X]= diffLowPassFilter(X, x);
+	sonar_filtered_diff_values[Y]= diffLowPassFilter(Y, y);
 }
