@@ -1108,6 +1108,10 @@
 		<field name="sonar_right" type="uint16" alt_unit="cm"/>
 		<field name="sonar_back"  type="uint16" alt_unit="cm"/>
 		<field name="sonar_left"  type="uint16" alt_unit="cm"/>
+		<field name="sonar_front_right"  type="uint16" alt_unit="cm"/>
+		<field name="sonar_back_right"  type="uint16" alt_unit="cm"/>
+		<field name="sonar_back_left"  type="uint16" alt_unit="cm"/>
+		<field name="sonar_front_left"  type="uint16" alt_unit="cm"/>
 		<!--<field name="sonar_failsave_pitch" type="float" alt_unit="deg"/>
 		<field<d name="sonar_failsave_roll" type="float" alt_unit="deg"/>-->
 	</message>
