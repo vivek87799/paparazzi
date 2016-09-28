@@ -36,6 +36,8 @@ struct actuators_model_s {
 	float roll;
 	float yaw;
 	float thrust;
+	float start; //<< static thrust to start
+	float land;  //<< static thrust to land
 	// int vsupply_tel; //noch nicht Funktionstauglich
 };
 
