@@ -28,7 +28,7 @@
 		<block name="start">
 			<set value="0.6" var="finken_system_set_point.z"/> 
 			<set value="0" var="finken_system_model_control_height"/> 
-			<attitude pitch="finken_actuators_set_point.pitch" roll="finken_actuators_set_point.roll" yaw="finken_actuators_set_point.yaw" throttle="compensate_battery_drop_on_start(0.40)" 				until="pos_z > 0.5" vmode="throttle"/>
+			<attitude pitch="finken_actuators_model.pitch" roll="finken_actuators_model.roll" yaw="finken_actuators_model.yaw" throttle="finken_actuators_model.start" until="pos_z > 0.5" vmode="throttle"/>
 			<deroute block="inair"/>
 		</block> 
 
@@ -36,14 +36,14 @@
 			<set value="0.6" var="finken_system_set_point.z"/> 
 			<set value="1" var="finken_system_model_control_height"/> 
 			<call fun="ws2801_activateLeds()"/>
-			<attitude pitch="finken_actuators_set_point.pitch" roll="finken_actuators_set_point.roll" yaw="finken_actuators_set_point.yaw" throttle="compensate_battery_drop(finken_actuators_set_point.thrust)" until="105 > electrical.vsupply" vmode="throttle"/>
+			<attitude pitch="finken_actuators_model.pitch" roll="finken_actuators_model.roll" yaw="finken_actuators_model.yaw" throttle="finken_actuators_model.thrust" until="105 > electrical.vsupply" vmode="throttle"/>
 			<deroute block="landing"/>
 		</block>
 
 	<block name="landing">
 			<set value="0" var="finken_system_model_control_height"/> 
 			<call fun="ws2801_deactivateLeds()"/>
-			<attitude pitch="finken_actuators_set_point.pitch" roll="finken_actuators_set_point.roll" yaw="finken_actuators_set_point.yaw" throttle="compensate_battery_drop(0.32-0.015)" 				until="0.25>pos_z" vmode="throttle"/>
+			<attitude pitch="finken_actuators_model.pitch" roll="finken_actuators_model.roll" yaw="finken_actuators_model.yaw" throttle="finken_actuators_model.land" until="0.25>pos_z" vmode="throttle"/>
 			<deroute block="empty"/>
 		</block>
   </blocks>

@@ -38,44 +38,13 @@ void finken_actuators_model_init(void) {
 	finken_actuators_set_point.roll   = 0;
 	finken_actuators_set_point.yaw    = 0;
 	finken_actuators_set_point.thrust = 0;
+	finken_actuators_set_point.start  = FINKEN_THRUST_START;
+	finken_actuators_set_point.land   = FINKEN_THRUST_LAND;
 
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FINKEN_ACTUATORS_MODEL, send_finken_actuators_model_telemetry);
 	register_periodic_telemetry(DefaultPeriodic, PPRZ_MSG_ID_FINKEN_ACTUATORS_SET_POINT, send_finken_actuators_set_point_telemetry);
 }
 
-void finken_actuators_model_periodic(void) {
-	finken_actuators_model.pitch  = finken_actuators_set_point.pitch;
-	finken_actuators_model.roll   = finken_actuators_set_point.roll;
-	finken_actuators_model.yaw    = finken_actuators_set_point.yaw;
-	finken_actuators_model.thrust = compensate_battery_drop(finken_actuators_set_point.thrust);
-}
-
-/** 
-	This function is similar to the compensate_battery_drop function below. It just returns a fix value, if the electrical.vsupply > 121.
-*/
-float compensate_battery_drop_on_start(float thrust) {
-	float defVoltage = 121;
-	
-	float currVoltage = electrical.vsupply;
-
-	if (currVoltage > 121 )
-		return 0.36;
-	else if (currVoltage < 105)
-		return thrust;
-	
-	float percentageVloss = 1 - (currVoltage/defVoltage);
-	
-	float a1 = 37.854887;
-	float a2 = -8.288718;
-	float a3 = 2.542685;
-	float a4 = 0.049967;
-
-	float percentage = (a1* percentageVloss * percentageVloss * percentageVloss) + (a2 * percentageVloss * percentageVloss) + a3 * percentageVloss + a4;
-
-	float comp_thrust = thrust + (thrust * percentage);
-
-	return comp_thrust;
-}
 /** 
 	This function calculates the needed thrust at any given battery voltage.
 */
@@ -105,6 +74,16 @@ float compensate_battery_drop(float thrust) {
 
 	return comp_thrust;
 }
+
+void finken_actuators_model_periodic(void) {
+	finken_actuators_model.pitch  = finken_actuators_set_point.pitch;
+	finken_actuators_model.roll   = finken_actuators_set_point.roll;
+	finken_actuators_model.yaw    = finken_actuators_set_point.yaw;
+	finken_actuators_model.thrust = compensate_battery_drop(finken_actuators_set_point.thrust);
+	finken_actuators_model.start  = compensate_battery_drop(finken_actuators_set_point.start);
+	finken_actuators_model.land   = compensate_battery_drop(finken_actuators_set_point.land);
+}
+
 void send_finken_actuators_model_telemetry(struct transport_tx *trans, struct link_device* link)
 {
 	trans=trans;
