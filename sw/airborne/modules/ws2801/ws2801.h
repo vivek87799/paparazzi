@@ -2,7 +2,6 @@
 
 #include <stdint.h>
 
-#define WS2801_LEDS 4
 
 enum Errors {
 	SUCCESS,
