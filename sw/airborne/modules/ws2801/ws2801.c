@@ -1,7 +1,11 @@
 #include <modules/ws2801/ws2801.h>
 
 #include <led.h>
+#include <string.h>
 
+#ifndef LEDS
+	#warning Undefined number of leds, Please set WS2801_LEDS to the amount of LEDS in your chain!
+#endif
 enum RGB {
 	RGB_START = 0,
 	B=0,
@@ -22,8 +26,35 @@ enum Logic {
 	high
 };
 
-static uint8_t colorBuffer[WS2801_LEDS][RGB_END];
-static uint8_t currLed, currColor, currBit, clockState, startTime;
+#ifdef COLOR_FORMAT_BGR
+  #define COLOR_INC -1
+  #define COLOR_START RGB_END-1
+  #define COLOR_END RGB_START-1
+#else
+  #define COLOR_INC 1
+  #define COLOR_START RGB_START
+  #define COLOR_END RGB_END
+	
+#endif
+
+#define START LEDS - 4
+
+
+#ifndef TRACK_COLORS
+	static uint8_t trackColors[4][RGB_END] = {{0, 255, 0}, {0, 255, 0}, {255, 0, 0}, {255, 0, 0} };	
+#else
+	static uint8_t trackColors[4][RGB_END] = {TRACK_COLORS};	
+#endif
+
+#ifdef ID_COLOR
+  #if LEDS > 4
+    static uint8_t acColor[RGB_END] = {ID_COLOR};
+  #endif
+#endif
+//static uint8_t white[WS2801_LEDS][RGB_END]   = {{255, 255, 255}, {255, 255, 255}, {255, 255, 255}, {0, 0, 0} };
+
+static uint8_t colorBuffer[LEDS][RGB_END];
+static int8_t currLed, currColor, currBit, clockState, startTime;
 
 uint8_t ws2801_ledNr;
 uint8_t ws2801_red;
@@ -53,6 +84,11 @@ void ws2801_init(void) {
 	currLed = 0;
 	currColor = 0;
 	currBit = 8;
+#ifdef ID_COLOR
+  #if LEDS > 4
+    memcpy(colorBuffer[0], acColor, sizeof(acColor));
+  #endif
+#endif
 	clockState = clockIdle;
 	ws2801_deactivateLeds();
 }
@@ -70,15 +106,15 @@ void ws2801_event(void) {
 			setClock(high);
 			clockState = clockLow; 
 			if( currBit == 0 ) {
-				currColor++;
+				currColor+=COLOR_INC;
 				currBit=8;
 			}
-
-			if(currColor==RGB_END) {
+				
+			if(currColor==COLOR_END) {
 				currLed++;
-				currColor = RGB_START;
+				currColor = COLOR_START;
 			}
-			if(currLed == WS2801_LEDS) {
+			if(currLed == LEDS) {
 				currLed = 0;
 				clockState = clockIdle;
 			}
@@ -98,35 +134,25 @@ void ws2801_event(void) {
 }
 
 enum Errors ws2801_setColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b) {
-	if(led >= WS2801_LEDS)
+	if(led >= LEDS)
 		return NO_SUCH_LED;
 	if(clockState != clockIdle)
 		return BUSY;
-	colorBuffer[led][R] = r;
-	colorBuffer[led][G] = g;
-	colorBuffer[led][B] = b;
+	colorBuffer[led+START][R] = r;
+	colorBuffer[led+START][G] = g;
+	colorBuffer[led+START][B] = b;
 	start();
 	return SUCCESS;
 }
 
 int ws2801_activateLeds(void){
-	colorBuffer[0][R]=255;
-	colorBuffer[0][G]=255;
-	colorBuffer[0][B]=255;
-	colorBuffer[1][R]=255;
-	colorBuffer[1][G]=255;
-	colorBuffer[1][B]=255;
-	colorBuffer[2][R]=255;
-	colorBuffer[2][G]=255;
-	colorBuffer[2][B]=255;
+	memcpy(colorBuffer+START, trackColors, sizeof(trackColors));
 	start();
 	return 0;
 }
 
 int ws2801_deactivateLeds(void){
-	for(unsigned int i=0;i<WS2801_LEDS;i++)
-		for(unsigned int j=0;j<RGB_END;j++)
-			colorBuffer[i][j] = 0;
+	memset(colorBuffer+START, sizeof(trackColors), 0);
 	start();
 	return 0;
 }
