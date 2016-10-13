@@ -138,9 +138,9 @@ enum Errors ws2801_setColor(uint8_t led, uint8_t r, uint8_t g, uint8_t b) {
 		return NO_SUCH_LED;
 	if(clockState != clockIdle)
 		return BUSY;
-	colorBuffer[led+START][R] = r;
-	colorBuffer[led+START][G] = g;
-	colorBuffer[led+START][B] = b;
+	colorBuffer[led][R] = r;
+	colorBuffer[led][G] = g;
+	colorBuffer[led][B] = b;
 	start();
 	return SUCCESS;
 }
