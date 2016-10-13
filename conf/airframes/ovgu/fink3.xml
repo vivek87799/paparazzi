@@ -52,7 +52,9 @@
 			<configure name="ADC_IR" value="ADC_3"/>
 		</load>
 		<load name="finken_wall_avoid.xml"/>
-		<load name="ws2801.xml"/>
+		<load name="ws2801.xml">
+			<define name="LEDS" value="4"/>
+		</load>
 		<!--<load name="finken_rc_passthrough.xml"/>-->
 		<load name="logger_sd_spi_direct.xml">
 			<configure name="LOGGER_LED" value="5"/>
@@ -237,9 +239,9 @@
 
 	<!-- 2S /-->
 	<section name="BAT">
-		<define name="CATASTROPHIC_BAT_LEVEL" value="9.0" unit="V"/>
-		<define name="CRITIC_BAT_LEVEL" value="9.3" unit="V"/>
-		<define name="LOW_BAT_LEVEL" value="9.9" unit="V"/>
+		<define name="CATASTROPHIC_BAT_LEVEL" value="8.5" unit="V"/>
+		<define name="CRITIC_BAT_LEVEL" value="9.0" unit="V"/>
+		<define name="LOW_BAT_LEVEL" value="9.5" unit="V"/>
 		<define name="MAX_BAT_LEVEL" value="12.4" unit="V"/>
 	</section>
 
