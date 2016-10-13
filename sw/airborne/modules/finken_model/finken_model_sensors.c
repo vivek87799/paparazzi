@@ -75,10 +75,10 @@ void finken_sensor_model_periodic(void)
   memcpy(&finken_sensor_model.acceleration, &imu.accel, sizeof(struct Int32Vect3));
 
 #ifdef USE_SONAR_TOWER
-	finken_sensor_model.distance_d_front = sonar_filtered_values[SONAR_FRONT];
-	finken_sensor_model.distance_d_right = sonar_filtered_values[SONAR_RIGHT];
-	finken_sensor_model.distance_d_back  = sonar_filtered_values[SONAR_BACK];
-	finken_sensor_model.distance_d_left  = sonar_filtered_values[SONAR_LEFT];
+	finken_sensor_model.distance_d_front = virtSonars[SONAR_FRONT];
+	finken_sensor_model.distance_d_right = virtSonars[SONAR_RIGHT];
+	finken_sensor_model.distance_d_back  = virtSonars[SONAR_BACK];
+	finken_sensor_model.distance_d_left  = virtSonars[SONAR_LEFT];
 	finken_sensor_model.distance_diff_x  = sonar_filtered_diff_values[0];
 	finken_sensor_model.distance_diff_y  = sonar_filtered_diff_values[1];
 #else

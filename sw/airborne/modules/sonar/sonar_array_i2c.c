@@ -72,36 +72,13 @@ enum SonarState{
 	FETCHING
 };
 
+uint16_t getSonarValue(enum Sonars sonar) {
+	return (sonar>=SONAR_END)?FINKEN_SONAR_MAX_DIST:sonar_values[sonar];
+}
+
 static void setSonarValue(enum Sonars sonar, uint16_t value) {
-	sonar_values[sonar] = value;
-	/*switch (sonar) {
-	case (SONAR_FRONT):
-		sonar_values.front = value;
-		break;
-	case (SONAR_RIGHT):
-		sonar_values.right = value;
-		break;
-	case (SONAR_BACK):
-		sonar_values.back = value;
-		break;
-	case (SONAR_LEFT):
-		sonar_values.left = value;
-		break;
-	case (SONAR_FRONT_RIGHT):
-		sonar_values.front_right= value;
-		break;
-	case (SONAR_BACK_RIGHT):
-		sonar_values.back_right = value;
-		break;
-	case (SONAR_BACK_LEFT):
-		sonar_values.back_left = value;
-		break;
-	case (SONAR_FRONT_LEFT):
-		sonar_values.front_left = value;
-		break;
-	default:
-		break;
-	}*/
+	if(sonar<SONAR_END)
+		sonar_values[sonar] = value;
 }
 
 static enum Sonars current_sonar;
@@ -111,7 +88,7 @@ static struct i2c_transaction sonar_i2c_write_trans[1];
 void sonar_array_i2c_init(void)
 {
 	current_sonar = SONAR_START;
-
+	memset(sonar_values, sizeof(sonar_values), 0);
 	for (unsigned int i = SONAR_START; i < SONAR_END; i++)
 		setSonarValue(i, FINKEN_SONAR_MAX_DIST);
 

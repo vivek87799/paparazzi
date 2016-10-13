@@ -33,14 +33,12 @@
 #include "subsystems/datalink/telemetry.h"
 
 enum Sonars {
-	SONAR_START = 0, SONAR_FRONT = 0, SONAR_RIGHT, SONAR_BACK, SONAR_LEFT, SONAR_FRONT_RIGHT, SONAR_BACK_RIGHT, SONAR_BACK_LEFT, SONAR_FRONT_LEFT, SONAR_END//=SONAR_FRONT_LEFT
-//	SONAR_START = 0, SONAR_FRONT = 0, SONAR_RIGHT, SONAR_BACK, SONAR_LEFT, SONAR_FRONT_RIGHT, SONAR_BACK_RIGHT, SONAR_BACK_LEFT, SONAR_FRONT_LEFT, SONAR_END=3
+	SONAR_START = 0, SONAR_FRONT = 0, SONAR_RIGHT, SONAR_BACK, SONAR_LEFT, SONAR_FRONT_RIGHT, SONAR_BACK_RIGHT, SONAR_BACK_LEFT, SONAR_FRONT_LEFT, SONAR_END
 };
-
-extern uint16_t sonar_values[SONAR_END];
 
 extern void sonar_array_i2c_init(void);
 extern void sonar_array_i2c_periodic(void);
 extern void send_sonar_array_telemetry(struct transport_tx *trans, struct link_device *link);
+extern uint16_t getSonarValue(enum Sonars sonars);
 
 #endif
