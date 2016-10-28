@@ -1,9 +1,16 @@
 #include <modules/finken_model/finken_sonar_filter.h>
 #include <modules/sonar/sonar_array_i2c.h>
 
+#ifndef BACKLOG
+#define BACKLOG 2
+#endif
+#ifndef MIN_ORDER
+#define MIN_ORDER BACKLOG + 0
+#endif
+
 enum Axes {X, Y};
 
-uint16_t sonar_filtered_values[SONAR_END];
+uint16_t sonar_filtered_values[BACKLOG][SONAR_END];
 uint32_t virtSonars[4];
 int16_t sonar_filtered_diff_values[2];
 
@@ -12,23 +19,9 @@ static uint16_t lowPassBuf[SONAR_END][FINKEN_SONAR_LOW_PASS_SIZE];
 static int16_t lowPassDiff[2][FINKEN_SONAR_DIFF_LOW_PASS_SIZE];
 
 static void setSonarFilterValue(enum Sonars sonar, uint16_t value) {
-	sonar_filtered_values[sonar] = value;
-	/*switch (sonar) {
-	case (SONAR_FRONT):
-		sonar_filtered_values.front = value;
-		break;
-	case (SONAR_RIGHT):
-		sonar_filtered_values.right = value;
-		break;
-	case (SONAR_BACK):
-		sonar_filtered_values.back = value;
-		break;
-	case (SONAR_LEFT):
-		sonar_filtered_values.left = value;
-		break;
-	default:
-		break;
-	}*/
+  for(int i=1; i<BACKLOG;i++)
+	  sonar_filtered_values[i][sonar] = sonar_filtered_values[i-1][sonar];
+	sonar_filtered_values[0][sonar] = value;
 }
 
 static uint16_t rangeFilter(uint16_t value) {
@@ -47,6 +40,22 @@ static uint16_t lowPassFilter(enum Sonars sonar, uint16_t value) {
 		sum +=lowPassBuf[sonar][i];
 	sum/=FINKEN_SONAR_LOW_PASS_SIZE;
 	return sum;
+}
+
+static uint16_t robustMinFilter(enum Sonars sonar) {
+  uint16_t min[MIN_ORDER];
+  uint8_t sonarOffset[] = {0, 3, 4};
+  memset(min, 0xff, sizeof(min));
+  for(unsigned int i=0;i<BACKLOG;i++)
+    for(unsigned int s=0;s<sizeof(sonarOffset);s++)
+      for(unsigned int j=0;j<MIN_ORDER;j++)
+        if(sonar_filtered_values[i][sonar+sonarOffset[s]] <= min[j]){
+          for(unsigned int k=j+1;k<MIN_ORDER;k++)
+            min[k] = min[k-1];
+          min[j] = sonar_filtered_values[i][sonar+sonarOffset[s]];
+          break;
+        }
+  return min[MIN_ORDER-1];
 }
 
 static int16_t diffLowPassFilter(enum Axes axis, int16_t value) {
@@ -72,6 +81,7 @@ static int16_t diffRangeFilter(uint16_t a, uint16_t b) {
 void finken_sonar_filter_init(void) {
 	lpI = 0;
 	lpA = 0;
+  memset(sonar_filtered_values, 0xff, sizeof(sonar_filtered_values));
 	for(unsigned int sonar = SONAR_START; sonar < SONAR_END; sonar++)
 		for(unsigned int i = 0; i < FINKEN_SONAR_LOW_PASS_SIZE; i++)
 			lowPassBuf[sonar][i] = FINKEN_SONAR_MAX_DIST;
@@ -87,13 +97,11 @@ void finken_sonar_filter_periodic(void) {
 		value = lowPassFilter(sonar, value);
 		setSonarFilterValue(sonar, value);
 	}
-	if(SONAR_END>SONAR_LEFT) {
-		virtSonars[SONAR_FRONT] = (2*sonar_filtered_values[SONAR_FRONT] + sonar_filtered_values[SONAR_FRONT_LEFT]  + sonar_filtered_values[SONAR_FRONT_RIGHT])/4;
-		virtSonars[SONAR_BACK]  = (2*sonar_filtered_values[SONAR_BACK]  + sonar_filtered_values[SONAR_BACK_LEFT]   + sonar_filtered_values[SONAR_BACK_RIGHT])/4;
-		virtSonars[SONAR_LEFT]  = (2*sonar_filtered_values[SONAR_LEFT]  + sonar_filtered_values[SONAR_FRONT_LEFT]  + sonar_filtered_values[SONAR_BACK_LEFT])/4;
-		virtSonars[SONAR_RIGHT] = (2*sonar_filtered_values[SONAR_RIGHT] + sonar_filtered_values[SONAR_FRONT_RIGHT] + sonar_filtered_values[SONAR_BACK_RIGHT])/4;
-	} else {
-		memcpy(virtSonars, sonar_filtered_values, sizeof(virtSonars));
+	if(SONAR_END>SONAR_LEFT)
+    for(int i = 0; i<= SONAR_LEFT;i++)
+		  virtSonars[i] = robustMinFilter(i);
+	else {
+		memcpy(virtSonars, sonar_filtered_values[0], sizeof(virtSonars));
 	}
 	int16_t x = diffRangeFilter(virtSonars[SONAR_BACK], virtSonars[SONAR_FRONT]);
 	int16_t y = diffRangeFilter(virtSonars[SONAR_RIGHT], virtSonars[SONAR_LEFT]);
