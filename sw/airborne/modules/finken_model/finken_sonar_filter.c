@@ -14,7 +14,6 @@ uint32_t virtSonars[4];
 int16_t sonar_filtered_diff_values[2];
 
 static int lpI, lpA;
-static uint16_t lowPassBuf[SONAR_END][FINKEN_SONAR_LOW_PASS_SIZE];
 static int16_t lowPassDiff[2][FINKEN_SONAR_DIFF_LOW_PASS_SIZE];
 
 static void insertSonarValue(enum Sonars sonar, uint16_t value) {
@@ -79,36 +78,36 @@ void finken_sonar_filter_init(void) {
 	lpA = 0;
   memset(sonar_filtered_values, 0xff, sizeof(sonar_filtered_values));
 	for(unsigned int sonar = SONAR_START; sonar < SONAR_END; sonar++)
-		for(unsigned int i = 0; i < FINKEN_SONAR_LOW_PASS_SIZE; i++)
-			lowPassBuf[sonar][i] = FINKEN_SONAR_MAX_DIST;
 	for(unsigned int axis = X; axis <= Y; axis++)
 		for(unsigned int i = 0; i < FINKEN_SONAR_DIFF_LOW_PASS_SIZE; i++)
 			lowPassDiff[axis][i] = 0;
 }
 
 #ifdef USE_MIN_ORDER_FILTER
-static int comp(const void* a, const void* b) {
-  return *(unsigned int*)a - *(unsigned int*)b;
+inline void swap(uint16_t* a, uint16_t* b) {
+  uint16_t temp=*a;
+  *a=*b;
+  *b=temp;
 }
 
 static void minOrderFilter(void) {
-  for(enum Sonars sonar=SONAR_START;sonar<4;sonar++) {
+  for(enum Sonars sonar=SONAR_START; sonar<4; sonar++) {
     uint16_t temp[BACKLOG*3];
-    for(unsigned int=0;i<BACKLOG;i++) {
-      temp[3*i]=sonar_filtered_values[sonar][i];
-      temp[3*i+1]=sonar_filtered_values[sonar+3][i];
-      temp[3*i+2]=sonar_filtered_values[sonar+4][i];
+    for(unsigned int i=0; i<BACKLOG; i++) {
+      temp[3*i+0] = sonar_filtered_values[i][sonar];
+      temp[3*i+1] = sonar_filtered_values[i][leftSonar(sonar)];
+      temp[3*i+2] = sonar_filtered_values[i][rightSonar(sonar)];
     }
-    qsort(temp, sizeof(temp)/sizeof(int), sizeof(int), comp);
-    uint32_t sum=0;
-    for(unsigned int i=0;i<BACKLOG;i++)
-      sum+=temp[i];
-    virtSonar[sonar]=sum/BACKLOG;
+    for(unsigned int n=BACKLOG*3; n>1; n--)
+      for(unsigned int i=1; i<n-1; i++)
+        if(temp[i-1] > temp[i])
+          swap(&temp[i-1], &temp[i]);
+    virtSonars[sonar]=lowPass(BACKLOG, temp);
   }
 }
 #endif
 
-#ifdef USE_MIN_ORDER_FILTER
+#ifdef USE_MIN_AVG_FILTER
 static void minAvgFilter(void) {
   uint16_t temp[SONAR_END-SONAR_START];
   for(enum Sonars sonar=SONAR_START;sonar<SONAR_END;sonar++)
@@ -128,7 +127,7 @@ static void computeVirtSonars(void) {
 		insertSonarValue(sonar, rangeFilter(getSonarValue(sonar)));
 
 
-	if(SONAR_END==SONAR_LEFT)
+	if(SONAR_END==SONAR_LEFT+1)
 		lowPassFilter();
   else{
 #ifdef USE_MIN_ORDER_FILTER

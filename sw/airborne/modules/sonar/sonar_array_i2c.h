@@ -36,6 +36,34 @@ enum Sonars {
 	SONAR_START = 0, SONAR_FRONT = 0, SONAR_RIGHT, SONAR_BACK, SONAR_LEFT, SONAR_FRONT_RIGHT, SONAR_BACK_RIGHT, SONAR_BACK_LEFT, SONAR_FRONT_LEFT, SONAR_END
 };
 
+inline enum Sonars leftSonar(enum Sonars sonar) {
+  switch(sonar) {
+    case(SONAR_FRONT)      : return SONAR_FRONT_LEFT;
+    case(SONAR_FRONT_RIGHT): return SONAR_FRONT;
+    case(SONAR_RIGHT)      : return SONAR_FRONT_RIGHT;
+    case(SONAR_BACK_RIGHT) : return SONAR_RIGHT;
+    case(SONAR_BACK)       : return SONAR_BACK_RIGHT;
+    case(SONAR_BACK_LEFT)  : return SONAR_BACK;
+    case(SONAR_LEFT)       : return SONAR_BACK_LEFT;
+    case(SONAR_FRONT_LEFT) : return SONAR_LEFT;
+    default                : return 0;
+  }
+}
+
+inline enum Sonars rightSonar(enum Sonars sonar) { 
+  switch(sonar) {
+    case(SONAR_FRONT)      : return SONAR_FRONT_RIGHT;
+    case(SONAR_FRONT_RIGHT): return SONAR_RIGHT;
+    case(SONAR_RIGHT)      : return SONAR_BACK_RIGHT;
+    case(SONAR_BACK_RIGHT) : return SONAR_BACK;
+    case(SONAR_BACK)       : return SONAR_BACK_LEFT;
+    case(SONAR_BACK_LEFT)  : return SONAR_LEFT;
+    case(SONAR_LEFT)       : return SONAR_FRONT_LEFT;
+    case(SONAR_FRONT_LEFT) : return SONAR_FRONT;
+    default                : return 0;
+  }
+}
+
 extern void sonar_array_i2c_init(void);
 extern void sonar_array_i2c_periodic(void);
 extern void send_sonar_array_telemetry(struct transport_tx *trans, struct link_device *link);
