@@ -152,7 +152,7 @@ int ws2801_activateLeds(void){
 }
 
 int ws2801_deactivateLeds(void){
-	memset(colorBuffer+START, sizeof(trackColors), 0);
+	memset(colorBuffer+START, 0, sizeof(trackColors));
 	start();
 	return 0;
 }

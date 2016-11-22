@@ -88,7 +88,7 @@ static struct i2c_transaction sonar_i2c_write_trans[1];
 void sonar_array_i2c_init(void)
 {
 	current_sonar = SONAR_START;
-	memset(sonar_values, sizeof(sonar_values), 0);
+	memset(sonar_values, 0, sizeof(sonar_values));
 	for (unsigned int i = SONAR_START; i < SONAR_END; i++)
 		setSonarValue(i, FINKEN_SONAR_MAX_DIST);
 
