@@ -1,16 +1,15 @@
 #include <modules/finken_model/finken_sonar_filter.h>
 #include <modules/sonar/sonar_array_i2c.h>
+#include <stdarg.h>
+#include <stdlib.h>
 
 #ifndef BACKLOG
 #define BACKLOG 2
 #endif
-#ifndef MIN_ORDER
-#define MIN_ORDER BACKLOG + 0
-#endif
 
 enum Axes {X, Y};
 
-uint16_t sonar_filtered_values[BACKLOG][SONAR_END];
+static uint16_t sonar_filtered_values[BACKLOG][SONAR_END];
 uint32_t virtSonars[4];
 int16_t sonar_filtered_diff_values[2];
 
@@ -18,7 +17,7 @@ static int lpI, lpA;
 static uint16_t lowPassBuf[SONAR_END][FINKEN_SONAR_LOW_PASS_SIZE];
 static int16_t lowPassDiff[2][FINKEN_SONAR_DIFF_LOW_PASS_SIZE];
 
-static void setSonarFilterValue(enum Sonars sonar, uint16_t value) {
+static void insertSonarValue(enum Sonars sonar, uint16_t value) {
   for(int i=1; i<BACKLOG;i++)
 	  sonar_filtered_values[i][sonar] = sonar_filtered_values[i-1][sonar];
 	sonar_filtered_values[0][sonar] = value;
@@ -32,17 +31,14 @@ static uint16_t rangeFilter(uint16_t value) {
 	return value;
 }
 
-static uint16_t lowPassFilter(enum Sonars sonar, uint16_t value) {
-	lowPassBuf[sonar][lpI++] = value;
-	lpI%=FINKEN_SONAR_LOW_PASS_SIZE;
-	uint16_t sum = 0;
-	for(unsigned int i=0;  i<FINKEN_SONAR_LOW_PASS_SIZE; i++)
-		sum +=lowPassBuf[sonar][i];
-	sum/=FINKEN_SONAR_LOW_PASS_SIZE;
-	return sum;
+static uint16_t lowPass(uint16_t n, const uint16_t* values) {
+  uint32_t sum=0;
+  for(unsigned int i=0;i<n;i++)
+    sum+=values[i];
+  return sum/n;
 }
 
-static uint16_t robustMinFilter(enum Sonars sonar) {
+/*static uint16_t robustMinFilter(enum Sonars sonar) {
   uint16_t min[MIN_ORDER];
   uint8_t sonarOffset[] = {0, 3, 4};
   memset(min, 0xff, sizeof(min));
@@ -56,7 +52,7 @@ static uint16_t robustMinFilter(enum Sonars sonar) {
           break;
         }
   return min[MIN_ORDER-1];
-}
+}*/
 
 static int16_t diffLowPassFilter(enum Axes axis, int16_t value) {
 	lowPassDiff[axis][lpA++] = value;
@@ -90,19 +86,65 @@ void finken_sonar_filter_init(void) {
 			lowPassDiff[axis][i] = 0;
 }
 
+#ifdef USE_MIN_ORDER_FILTER
+static int comp(const void* a, const void* b) {
+  return *(unsigned int*)a - *(unsigned int*)b;
+}
+
+static void minOrderFilter(void) {
+  for(enum Sonars sonar=SONAR_START;sonar<4;sonar++) {
+    uint16_t temp[BACKLOG*3];
+    for(unsigned int=0;i<BACKLOG;i++) {
+      temp[3*i]=sonar_filtered_values[sonar][i];
+      temp[3*i+1]=sonar_filtered_values[sonar+3][i];
+      temp[3*i+2]=sonar_filtered_values[sonar+4][i];
+    }
+    qsort(temp, sizeof(temp)/sizeof(int), sizeof(int), comp);
+    uint32_t sum=0;
+    for(unsigned int i=0;i<BACKLOG;i++)
+      sum+=temp[i];
+    virtSonar[sonar]=sum/BACKLOG;
+  }
+}
+#endif
+
+#ifdef USE_MIN_ORDER_FILTER
+static void minAvgFilter(void) {
+  uint16_t temp[SONAR_END-SONAR_START];
+  for(enum Sonars sonar=SONAR_START;sonar<SONAR_END;sonar++)
+    temp[sonar]  = lowPass(backlog, sonar_filtered_values[sonar]);
+  for(unsigned int i=0;i<4;i++)
+    virtSonars[i]=min(temp[sonar], temp[sonar+3], temp[sonar+4]);
+}
+#endif
+
+static void lowPassFilter(void) {
+  for(enum Sonars sonar=SONAR_START;sonar<4;sonar++)
+    virtSonars[sonar] = lowPass(BACKLOG, sonar_filtered_values[sonar]);
+}
+
+static void computeVirtSonars(void) {
+	for(unsigned int sonar = SONAR_START; sonar < SONAR_END; sonar++)
+		insertSonarValue(sonar, rangeFilter(getSonarValue(sonar)));
+
+
+	if(SONAR_END==SONAR_LEFT)
+		lowPassFilter();
+  else{
+#ifdef USE_MIN_ORDER_FILTER
+    minOrderFilter();
+#endif
+#ifdef USE_MIN_AVG_FILTER
+    minAvgFilter();
+#endif
+#ifdef USE_LOW_PASS_FILTER
+      lowPassFilter();
+#endif
+  }
+}
+
 void finken_sonar_filter_periodic(void) {
-	for(unsigned int sonar = SONAR_START; sonar < SONAR_END; sonar++) {
-		uint16_t value = getSonarValue(sonar);
-		value = rangeFilter(value);
-		value = lowPassFilter(sonar, value);
-		setSonarFilterValue(sonar, value);
-	}
-	if(SONAR_END>SONAR_LEFT)
-    for(int i = 0; i<= SONAR_LEFT;i++)
-		  virtSonars[i] = robustMinFilter(i);
-	else {
-		memcpy(virtSonars, sonar_filtered_values[0], sizeof(virtSonars));
-	}
+  computeVirtSonars();
 	int16_t x = diffRangeFilter(virtSonars[SONAR_BACK], virtSonars[SONAR_FRONT]);
 	int16_t y = diffRangeFilter(virtSonars[SONAR_RIGHT], virtSonars[SONAR_LEFT]);
 	sonar_filtered_diff_values[X]= diffLowPassFilter(X, x);
