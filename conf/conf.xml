@@ -2,7 +2,7 @@
   <aircraft
    name="FINken3_01"
    ac_id="5"
-   airframe="airframes/ovgu/fink3_max_bgr.xml"
+   airframe="airframes/ovgu/fink3_max_1.xml"
    radio="radios/spektrum.xml"
    telemetry="telemetry/ovgu/free_flight.xml"
    flight_plan="flight_plans/ovgu/free_flight.xml"
