@@ -1,0 +1,15 @@
+<!DOCTYPE module SYSTEM "module.dtd">
+
+<module name="test_mod1">
+  <doc>
+    <description>Module to send heading telemetry.</description>
+  </doc>
+  <header>
+    <file name="test_mod1.h"/>
+  </header>
+  <init fun="heading_init()" />
+  <periodic fun="heading_periodic()" freq="5" />
+  <makefile>
+    <file name="test_mod1.c"/>
+  </makefile>
+</module>
