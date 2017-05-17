@@ -1,7 +1,4 @@
 #include "test_mod1.h"
-#include "state.h"
-#include "subsystems/datalink/telemetry.h"
-#include "math/pprz_algebra_float.h"
 
 //static struct FloatEulers* fe_heading; 
 

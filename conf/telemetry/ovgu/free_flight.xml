@@ -5,6 +5,10 @@
   <process name="Main">
 
     <mode name="default" key_press="d">
+
+      
+      <message name="HEADING" period="0.2" />
+
       <message name="FINKEN_SENSOR_MODEL"      period="0.1" />
       <message name="SONAR_ARRAY"      period="1" />
       <message name="FINKEN_ACTUATORS_MODEL"   period="0.2" />

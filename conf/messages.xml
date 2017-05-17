@@ -81,7 +81,7 @@
    </message>
 
    <message name="HEADING" id="14">
-     <field name="f_heading" type="float" unit=""/>
+     <field name="f_heading" type="float" unit="r" />
    </message>
 
    <message name="ADC_GENERIC" id="18">
