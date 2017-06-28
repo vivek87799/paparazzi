@@ -16,7 +16,7 @@ void send_heading_telemetry(struct transport_tx *trans, struct link_device* link
     link=link;
 
     if(fe_heading != 0 ){
-    	float heading = fe_heading->theta;
+    	float heading = fe_heading->psi;
 
     	DOWNLINK_SEND_HEADING(
     	DefaultChannel,

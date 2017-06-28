@@ -1,0 +1,11 @@
+  <msg_class name="intermcu">
+    <message name="IMCU_COMMANDS" id="1">
+      <field name="status" type="uint8"/>
+      <field name="values" type="int16[]"/>
+    </message>
+
+    <message name="IMCU_RADIO_COMMANDS" id="2">
+      <field name="status" type="uint8"/>
+      <field name="values" type="int16[]"/>
+    </message>
+  </msg_class>

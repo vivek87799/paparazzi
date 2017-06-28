@@ -9,6 +9,7 @@
       
       <message name="HEADING" period="0.2" />
 
+      <message name="GPS" period="1"/>
       <message name="FINKEN_SENSOR_MODEL"      period="0.1" />
       <message name="SONAR_ARRAY"      period="1" />
       <message name="FINKEN_ACTUATORS_MODEL"   period="0.2" />

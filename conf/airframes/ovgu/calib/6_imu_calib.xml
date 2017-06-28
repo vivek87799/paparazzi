@@ -3,9 +3,9 @@
 
   <section name="IMU" prefix="IMU_">
     <!-- these gyro and accel calib values are the defaults for aspirin2.1/2.2 -->
-    <define name="GYRO_X_NEUTRAL" value="0"/>
-    <define name="GYRO_Y_NEUTRAL" value="0"/>
-    <define name="GYRO_Z_NEUTRAL" value="5"/>
+    <define name="GYRO_P_NEUTRAL" value="0"/>
+    <define name="GYRO_Q_NEUTRAL" value="0"/>
+    <define name="GYRO_R_NEUTRAL" value="15"/>
 
     <define name="GYRO_X_SENS" value="4.359" integer="16"/>
     <define name="GYRO_Y_SENS" value="4.359" integer="16"/>

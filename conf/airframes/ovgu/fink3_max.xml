@@ -28,7 +28,7 @@
 		</subsystem>
 		<subsystem name="imu"           type="aspirin_v2.1"/>
 		<subsystem name="stabilization" type="int_quat"/>
-		<subsystem name="ahrs"          type="float_cmpl_quat">
+		<subsystem name="ahrs"          type="float_mlkf">
 			<define name="AHRS_GRAVITY_HEURISTIC_FACTOR" value="0"/>
 		</subsystem>
 		<subsystem name="ins"/>
