@@ -21,7 +21,7 @@
 
     <subsystem name="radio_control" type="spektrum">
       <define name="RADIO_MODE" value="RADIO_AUX1"/>
-      <configure name="USE_SECONDARY_SPEKTRUM_RECEIVER" value="1"/>
+      <configure name="USE_SECONDARY_SPEKTRUM_RECEIVER" value="0"/>
     </subsystem>
 
     <subsystem name="motor_mixing"/>
@@ -29,9 +29,12 @@
       <define name="SERVO_HZ" value="400"/>
     </subsystem>
 
-    <subsystem name="telemetry"     type="transparent"/>
+    <subsystem name="telemetry"     type="transparent">
+      <configure name="MODEM_BAUD"  value="B38400"/>
+      <configure name="MODEM_PORT" value="UART3"/>
+    </subsystem>
     <subsystem name="imu"           type="lisa_mx_v2.1"/>
-    <subsystem name="gps"           type="ublox"/>
+    <subsystem name="gps"           type="datalink"/>
     <subsystem name="stabilization" type="int_quat"/>
     <subsystem name="ahrs"          type="float_mlkf">
 	    <!-- Uncomment to enable all axis update from the Magnetometer. Do
@@ -46,16 +49,18 @@
 
 
   <modules>
-    <load name="gps_ubx_ucenter.xml"/>
+    <!--load name="gps_ubx_ucenter.xml">
+      <configure name="UBX_GPS_PORT" value="UART2"/>
+    </load-->
     <load name="geo_mag.xml"/>
     <load name="air_data.xml"/>
   </modules>
 
   <servos driver="Pwm">
-    <servo name="FL" no="0" min="1000" neutral="1100" max="1900"/>
-    <servo name="FR" no="1" min="1000" neutral="1100" max="1900"/>
-    <servo name="BR" no="2" min="1000" neutral="1100" max="1900"/>
-    <servo name="BL" no="3" min="1000" neutral="1100" max="1900"/>
+    <servo name="FL" no="2" min="1000" neutral="1100" max="1900"/>
+    <servo name="FR" no="3" min="1000" neutral="1100" max="1900"/>
+    <servo name="BR" no="4" min="1000" neutral="1100" max="1900"/>
+    <servo name="BL" no="5" min="1000" neutral="1100" max="1900"/>
   </servos>
 
   <commands>
