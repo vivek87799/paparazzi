@@ -45,6 +45,7 @@ CFLAGS += $(shell pkg-config --cflags-only-I ivy-glib)
 CXXFLAGS  = -W -Wall
 CXXFLAGS += $(INCLUDES)
 CXXFLAGS += $($(TARGET).CFLAGS)
+CXXFLAGS += $($(TARGET).CXXFLAGS)
 CXXFLAGS += $(USER_CFLAGS)
 CXXFLAGS += -O$(OPT)
 CXXFLAGS += $(DEBUG_FLAGS)
@@ -77,7 +78,7 @@ $(OBJDIR)/simsitl : $($(TARGET).objs)
 	$(CC) $(CFLAGS) -S -o $@ $<
 
 %.s: %.cpp
-	$(CC) $(CFLAGS) -S -o $@ $<
+	$(CXX) $(CXXFLAGS) -S -o $@ $<
 
 $(OBJDIR)/%.s: %.c
 	@echo CC $@
