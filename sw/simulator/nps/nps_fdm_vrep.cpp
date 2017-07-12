@@ -1,19 +1,72 @@
 #include "nps_fdm.h"
 
+#include <iostream>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
+#include <boost/asio.hpp>
+
+#include <fstream>
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
+#include <thread>
+#include <chrono>
 
 using std::endl;
 using std::ostream;
 using boost::filesystem::ofstream;
 using boost::filesystem::current_path;
+using boost::asio::ip::tcp;
 
 struct NpsFdm fdm;
 struct LtpDef_d ltpRef;
 
 ofstream vrepLog(current_path()/"vrep.log");
 
+class VRepClient {
+  private:
+    tcp::iostream s;
+    bool connected=false;
+    void connect() {
+        while(!connected)
+          try
+          {
+            s.connect("localhost", "50013");
+            connected=true;
+          }
+          catch (std::exception& e)
+          {
+            vrepLog << "Exception: " << e.what() << "\n";
+            std::this_thread::sleep_for(std::chrono::seconds(60));
+          }
+    }
+  public:
+      void update() {
+        connect();
+        static unsigned int seqNr = 0;
+        try {
+          {
+            boost::archive::text_oarchive out(s);
+            out << seqNr;
+          }
+          vrepLog << "Query is: " << seqNr++ << std::endl;
+
+          boost::archive::text_iarchive in(s);
+          unsigned int i;
+          in >> i;
+          vrepLog << "Reply is: " << i << std::endl;
+
+        }catch(const std::exception& e) {
+            vrepLog << "Exception: " << e.what() << "\n";
+            vrepLog << "Error: " << s.error().message() << std::endl;
+        }
+      }
+};
+
+VRepClient client;
+
 void nps_fdm_init(double dt) {
+
   fdm.on_ground=1;
   fdm.ecef_pos.x=0.0;
   fdm.ecef_pos.y=0.0;
@@ -21,6 +74,9 @@ void nps_fdm_init(double dt) {
   fdm.ecef_ecef_vel.x=0.0f;
   fdm.ecef_ecef_vel.y=0.0f;
   fdm.ecef_ecef_vel.z=0.0f;
+  fdm.ltp_ecef_vel.x=0.0f;
+  fdm.ltp_ecef_vel.y=0.0f;
+  fdm.ltp_ecef_vel.z=0.0f;
   fdm.ecef_ecef_accel.x=0.0f;
   fdm.ecef_ecef_accel.y=0.0f;
   fdm.ecef_ecef_accel.z=0.0f;
@@ -30,15 +86,7 @@ void nps_fdm_init(double dt) {
   ltpRef.lla.lat=0.0;
   ltpRef.lla.lon=0.0;
   ltpRef.lla.alt=0.0;
-  ltpRef.ltp_of_ecef[0]=1.0;
-  ltpRef.ltp_of_ecef[1]=0.0;
-  ltpRef.ltp_of_ecef[2]=0.0;
-  ltpRef.ltp_of_ecef[3]=0.0;
-  ltpRef.ltp_of_ecef[4]=1.0;
-  ltpRef.ltp_of_ecef[5]=0.0;
-  ltpRef.ltp_of_ecef[6]=0.0;
-  ltpRef.ltp_of_ecef[7]=0.0;
-  ltpRef.ltp_of_ecef[8]=1.0;
+  ltp_def_from_ecef_d(&ltpRef, &ltpRef.ecef);
   fdm.time=0;
   fdm.init_dt=dt;
   vrepLog << "[" << fdm.time << "] vrep fdm init: dt=" << dt << endl;
@@ -46,11 +94,12 @@ void nps_fdm_init(double dt) {
 
 void nps_fdm_run_step(bool_t launch, double *commands, int commands_nb) {
   fdm.time+=fdm.init_dt;
-  ltp_ecef_vel
   vrepLog << "[" << fdm.time << "] vrep fdm step: launch=" << (launch?"yes":"no") << " commands=[";
   for(int i=0;i<commands_nb;i++)
     vrepLog << commands[i] << ((i==commands_nb-1)?"":", ");
   vrepLog << "]" << endl;
+
+  client.update();
 }
 
 void nps_fdm_set_wind(double speed, double dir) {
