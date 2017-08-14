@@ -1,4 +1,4 @@
-# Hey Emacs, this is a -*- makefile -*-
+	# Hey Emacs, this is a -*- makefile -*-
 #
 #   Copyright (C) 2003 Pascal Brisset, Antoine Drouin
 #
@@ -45,6 +45,13 @@ LABLGTK2_VER := $(shell ocamlfind query -format '%v' lablgtk2)
 LABLGTK2_MM := $(shell echo $(LABLGTK2_VER) | cut -f1,2 -d.)
 #LABLGTK2_NATIVE_WINDOW := $(shell echo '$(LABLGTK2_MM)>=2.18' | bc)
 ifeq ($(shell echo '$(LABLGTK2_MM)>=2.18' | bc),1)
+CAMLP4_DEFS = -DGDK_NATIVE_WINDOW
+endif
+# workaround wrong reported version of lablgtk in Debian/Ubuntu
+# see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=822949 and https://bugs.launchpad.net/ubuntu/+source/lablgtk2/+bug/1577236
+# Ubuntu 16.04: 2.18.3+dfsg-1   Ubuntu 16.10: 2.18.3+dfsg-2
+LABLGTK2_DEB := $(shell LC_ALL=C apt-cache policy liblablgtk2-ocaml | grep Installed | awk '{print $$2}' 2>/dev/null)
+ifneq (,$(findstring 2.18.3+dfsg, $(LABLGTK2_DEB)))
 CAMLP4_DEFS = -DGDK_NATIVE_WINDOW
 endif
 CAMLP4_DEFS ?=
